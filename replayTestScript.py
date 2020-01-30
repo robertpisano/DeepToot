@@ -1,11 +1,15 @@
-# import carball
-#
+import carball
+
 # analysis_manager = carball.analyze_replay_file('D:/Documents/RL Replays/1.replay',
 #                                       output_path='D:/Documents/RL Replays/1.json',
 #                                       overwrite=True)
+r = ['D:/Documents/RL Replays/1.replay', 'D:/Documents/RL Replays/1.replay']
+_json = carball.decompile_replay(r[0],
+                                    output_path='D:/Documents/RL Replays/1.json',
+                                    overwrite=True)
 # proto_game = analysis_manager.get_protobuf_data()
 # print('something')
-# # you can see more example of using the analysis manager below
+# you can see more example of using the analysis manager below
 
 
 import carball
@@ -22,7 +26,7 @@ import matplotlib.pyplot as plt
 #                                       overwrite=True)
 # _json is a JSON game object (from decompile_replay)
 game = Game()
-game.initialize(file_path = 'D:/Documents/RL Replays/2.json')# loaded_json=_json)
+game.initialize(loaded_json = _json)# loaded_json=_json)
 
 analysis_manager = AnalysisManager(game)
 analysis_manager.create_analysis()

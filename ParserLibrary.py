@@ -78,10 +78,10 @@ class ReplayConverter():
         self.root.withdraw()
         self.file_path = 'D:/Documents/RL Replays'
         # filedialog.askdirectory() # open directory dialog
-        self.replays_path = []
-        for r in os.listdir(self.file_path):
-            if r.endswith(".replay"):
-                self.replays_path.append(self.file_path + '/' + r)
+        # self.replays_path = []
+        # for r in os.listdir(self.file_path):
+        #     if r.endswith(".replay"):
+        #         self.replays_path.append(self.file_path + '/' + r)
         # self.replays_path = []
         # for r in replays_path:
         #     self.replays_path.append(str(r.replace(r'\\', '/').replace(r'/', r'\')))
@@ -96,7 +96,10 @@ class ReplayConverter():
     def convert_and_save_replays(self):
         game = Game()
         for i, r in enumerate(self.replays_path):
-            game.initialize(r.encode('utf-8')) # Initialize game with each file path
+            json_file = carball.decompile_replay(r,
+                                output_path = "D:/Documents/RL Replays/1.json",
+                                overwrite=True)
+            game.initialize(loaded_json = json_file) # Initialize game with each file path
             analysis_manager = AnalysisManager(game) # Initialize analysis_manager
             analysis_manager.create_analysis() # Analze replay
             data = analysis_manager.get_data_frame()

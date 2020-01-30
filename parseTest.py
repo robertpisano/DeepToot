@@ -11,3 +11,4 @@ rc.convert_and_save_replays()
 
 print(rc.replays_path)
 print(rc.output_path)
+# self.file_path + '/' + str(i) + '.json'
