@@ -5,8 +5,13 @@ import glob
 import carball
 import os
 import gzip
+import pickle
+
 from carball.json_parser.game import Game
 from carball.analysis.analysis_manager import AnalysisManager
+from carball.controls.controls import ControlsCreator
+
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -29,6 +34,7 @@ class BallCalculator():
         self.b = ball
         self.ball_goal0 = self.calc_goal_vectors()[0,:]
         self.ball_goal1 = self.calc_goal_vectors()[1,:]
+
 # raw goal is a function that evaluates the state of the ball only and the "score"  of the ball relative to each player
 #
 # The function can take many forms but to keep it simple currently f<> = -1 * (a * (1/r) + b * dot(v, ball_towards_own_goal_vector))
@@ -70,37 +76,69 @@ class Parser():
     def get_replay_directory(self):
         None
 
+
+# The entire instance of a replay put into padas to allow for modular data searching,
+# includes functional input data that can be parsed through to control a car in rocket league
+class TotalData():
+    None
+
+# Load ReplayConverter from pickled save file
+def factory():
+    try:
+        rc = ReplayConverter.load_state()
+        rc.saveStateExists = True
+        print('Save state found and loaded')
+        return rc
+    except Exception as e:
+        print(e)
+        rc = ReplayConverter()
+        rc.saveStateExists = False
+        print('No save state found for ReplayConverter')
+        return rc
+
+
 # Class that takes care of converting .replay to .json to .csv files for storing
 #
+
 class ReplayConverter():
+
     def __init__(self):
-        self.root = tk.Tk() # initialize tkinter root
-        self.root.withdraw()
-        self.file_path = 'D:/Documents/RL Replays'
-        # filedialog.askdirectory() # open directory dialog
-        # self.replays_path = []
-        # for r in os.listdir(self.file_path):
-        #     if r.endswith(".replay"):
-        #         self.replays_path.append(self.file_path + '/' + r)
-        # self.replays_path = []
-        # for r in replays_path:
-        #     self.replays_path.append(str(r.replace(r'\\', '/').replace(r'/', r'\')))
-        self.output_path = 'D:/Documents/RL Replays/CSV' # filedialog.askdirectory() # open output directory dialog
-        self.replays_path = [r'D:/Documents/RL Replays/1.replay', r'D:/Documents/RL Replays/2.replay']
-# open dialog, choose folder of .replay files,
+        None
+
+# Go through all the .replay files, and convert to CSV
 #
-# convert to csv, to use pandas
-#
-# open dialog, choose output folder for .csv files
-#
+# Save CSV files in chosen folder
     def convert_and_save_replays(self):
-        game = Game()
+        root = tk.Tk()
+        root.withdraw()
+        self.file_path = filedialog.askdirectory() # open directory dialog
+        self.replays_path = []
+        for r in os.listdir(self.file_path):
+            if r.endswith(".replay"):
+                self.replays_path.append(self.file_path + '/' + r)
+        self.output_path = filedialog.askdirectory() # open output directory dialog
+
+        self.game = Game()
         for i, r in enumerate(self.replays_path):
             json_file = carball.decompile_replay(r,
-                                output_path = "D:/Documents/RL Replays/1.json",
+                                output_path = self.file_path + str(i) + ".json",
                                 overwrite=True)
-            game.initialize(loaded_json = json_file) # Initialize game with each file path
-            analysis_manager = AnalysisManager(game) # Initialize analysis_manager
+            self.game.initialize(loaded_json = json_file) # Initialize game with each file path
+            analysis_manager = AnalysisManager(self.game) # Initialize analysis_manager
             analysis_manager.create_analysis() # Analze replay
             data = analysis_manager.get_data_frame()
-            data.to_csv(self.output_path + '/' + str(i) + '.replay')
+            data.to_csv(self.output_path + '/' + str(i) + '.csv')
+
+    def save_current_state(self):
+        pickle.dump(self, open('pickles/replayConverter.p', 'wb'))
+
+    @ staticmethod
+    def load_state():
+        return pickle.load(open('pickles/replayConverter.p', 'rb'))
+
+    @ staticmethod
+    def get_controls_from_replay(g: Game):
+        cc = ControlsCreator()
+        ret = cc.get_controls(g)
+        print('ret', ret)
+        return cc
