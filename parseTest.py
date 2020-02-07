@@ -5,8 +5,9 @@ try:
     if(rc.saveStateExists == False):
         rc.convert_and_save_replays()
         rc.save_current_state()
-    controls = ReplayConverter.get_controls_from_replay(rc.game)
-    print(controls)
+    cc = ReplayConverter.get_controls_from_replay(rc.game)
+    p = cc.players
+    # gameWithControls = ReplayConverter.append_control_data(rc.gameDataList[0], cc)
 except Exception as e:
     # For debugging
     print(e)

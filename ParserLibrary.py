@@ -6,6 +6,8 @@ import carball
 import os
 import gzip
 import pickle
+import pandas as pd
+from pandas import DataFrame
 
 from carball.json_parser.game import Game
 from carball.analysis.analysis_manager import AnalysisManager
@@ -117,7 +119,8 @@ class ReplayConverter():
             if r.endswith(".replay"):
                 self.replays_path.append(self.file_path + '/' + r)
         self.output_path = filedialog.askdirectory() # open output directory dialog
-
+        # self.gameDataList = []
+        # self.gameList = []
         self.game = Game()
         for i, r in enumerate(self.replays_path):
             json_file = carball.decompile_replay(r,
@@ -128,6 +131,8 @@ class ReplayConverter():
             analysis_manager.create_analysis() # Analze replay
             data = analysis_manager.get_data_frame()
             data.to_csv(self.output_path + '/' + str(i) + '.csv')
+            # self.gameDataList.append(data) # append pandas data to list
+            # self.gameList.append(self.game)
 
     def save_current_state(self):
         pickle.dump(self, open('pickles/replayConverter.p', 'wb'))
@@ -142,3 +147,8 @@ class ReplayConverter():
         ret = cc.get_controls(g)
         print('ret', ret)
         return cc
+
+    @ staticmethod
+    def append_control_data(data: DataFrame, cc: ControlsCreator):
+        for i, p in enumerate(cc.players):
+            name = p.name # Name of player for this data
