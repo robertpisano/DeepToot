@@ -13,6 +13,8 @@ import carball
 from carball.analysis.events.hit_detection.base_hit import BaseHit
 from carball.analysis.utils.proto_manager import ProtobufManager
 from carball.analysis.analysis_manager import AnalysisManager
+from carball.json_parser.game import Game
+
 # from ....generated.api.stats.events_pb2 import Hit
 from typing import Dict
 import NeuralNetworkDataGenerator as nndg
@@ -44,9 +46,8 @@ class HitFinder():
         ProtobufManager.write_proto_out_to_file(file, self.am.protobuf_game)
 
     def get_hits(self):
-        print(self.proto_game)
         kickoff_frames, first_touch_frames = self.am.get_kickoff_frames(self.am.game, self.am.protobuf_game, self.am.data_frame)
-        self.hits = BaseHit.get_hits_from_game(Game(), self.proto_game, self.am.id_creator, self.am.data_frame, first_touch_frames)
+        self.hits = BaseHit.get_hits_from_game(self.am.game, self.am.protobuf_game, self.am.id_creator, self.am.data_frame, first_touch_frames)
         self.hit_frames = list(self.hits.keys())
 
 class HitFinderFactory():
@@ -62,6 +63,7 @@ class HitFinderFactory():
     def load_analysis_manager():
         am = pickle.load(open(r'D:\\Documents\\RL Replays\\am.p', 'rb'))
         return am
+    
 
 
 def PrintException():
@@ -83,9 +85,11 @@ if __name__ == "__main__":
             # path = os.path.join('Documents', 'RL Replays', 'batchdata1.p')
             # b = pickle.load(open(r'D:\\Documents\\RL Replays\\batchdata.p', 'rb'))
             h = HitFinder()
-            h.load_from_protobuf_hardcoded()
+            # h.load_from_protobuf_hardcoded()
+            h = HitFinderFactory.load_analysis_manager()
             h.get_hits()
             b = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 5)
+
         else:
             h = HitFinder()
             h.load_replay()
@@ -93,8 +97,14 @@ if __name__ == "__main__":
             # print(h.hits)
             b = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 5)
             # HitFinderFactory.save_batch_data(b)
-            h.save_protobuf_hardcoded()
-            # HitFinderFactory.save(h)
+            # h.save_protobuf_hardcoded()
+            try:
+            
+                HitFinderFactory.save_analysis_manager(h)
+            except Exception as e:
+                print(e)
+                
+        
         print(b)
 
         frameWindow = b.batch[0] # quicker debugging
@@ -102,5 +112,5 @@ if __name__ == "__main__":
         playerState = gameFrame.p1
     except Exception as e:
         PrintException()
-    # import code
-    # code.interact(local=locals())
+    import code
+    code.interact(local=locals())

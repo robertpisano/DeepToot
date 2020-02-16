@@ -102,11 +102,11 @@ class TrainingBatch():
 
 
 # Generate data from when ball was hit and in/outWindow
-def generate_nn_data_from_hits(data, hits: Dict, inWindow: int, outWindow: int):
+def generate_nn_data_from_hits(am: AnalysisManager, hits: Dict, inWindow: int, outWindow: int):
     hit_frames = list(hits.keys())
     
-    object_keys = data.columns.levels[0]
-    data_keys = data.columns.levels[1]
+    object_keys = am.data_frame.columns.levels[0]
+    data_keys = am.data_frame.columns.levels[1]
     batch = TrainingBatch()
 
     for h in hit_frames:
