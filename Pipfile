@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pylint = "*"
 
 [packages]
 numpy = "*"
@@ -11,6 +12,7 @@ rlbot = "*"
 glob3 = "*"
 carball = "*"
 matplotlib = "*"
+cpickle = "*"
 
 [requires]
 python_version = "3.7"
