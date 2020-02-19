@@ -3,6 +3,7 @@
 import sys
 import linecache
 import pickle
+import dill
 import os
 import subprocess
 import pandas as pd
@@ -14,8 +15,7 @@ from carball.analysis.events.hit_detection.base_hit import BaseHit
 from carball.analysis.utils.proto_manager import ProtobufManager
 from carball.analysis.analysis_manager import AnalysisManager
 from carball.json_parser.game import Game
-
-# from ....generated.api.stats.events_pb2 import Hit
+from carball.generated.api.stats.events_pb2 import Hit
 from typing import Dict
 import NeuralNetworkDataGenerator as nndg
 from NeuralNetworkDataGenerator import TrainingBatch
@@ -57,11 +57,11 @@ class HitFinderFactory():
 
     @staticmethod
     def save_analysis_manager(am):
-        pickle.dump(am, open(r'D:\\Documents\\RL Replays\\am.p', 'wb'))
+        dill.dump(am, open(r'D:\\Documents\\RL Replays\\am.p', 'wb'))
 
     @staticmethod
     def load_analysis_manager():
-        am = pickle.load(open(r'D:\\Documents\\RL Replays\\am.p', 'rb'))
+        am = dill.load(open(r'D:\\Documents\\RL Replays\\am.p', 'rb'))
         return am
     
 
@@ -100,9 +100,13 @@ if __name__ == "__main__":
             # h.save_protobuf_hardcoded()
             try:
             
-                HitFinderFactory.save_analysis_manager(h)
+                HitFinderFactory.save_analysis_manager(h.am)
             except Exception as e:
-                print(e)
+                PrintException()
+                print('Trying trace before pickling')
+                dill.detect.trace(True)
+                dill.detect.errors(h.am)
+                dill.pickles(h.am)
                 
         
         print(b)
@@ -112,5 +116,6 @@ if __name__ == "__main__":
         playerState = gameFrame.p1
     except Exception as e:
         PrintException()
+
     import code
     code.interact(local=locals())
