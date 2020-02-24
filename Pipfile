@@ -18,6 +18,9 @@ readline = "*"
 keras = "*"
 prettyprint = "*"
 termcolor = "*"
+numpy-stl = "*"
+pyquaternion = "*"
+gekko = "*"
 
 [requires]
 python_version = "3.7"
