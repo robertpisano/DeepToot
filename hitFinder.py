@@ -19,6 +19,7 @@ from carball.generated.api.stats.events_pb2 import Hit
 from typing import Dict
 import NeuralNetworkDataGenerator as nndg
 from NeuralNetworkDataGenerator import TrainingBatch
+import NeuralNetworkTrainer
 
 class HitFinder():
     def __init__(self):
@@ -50,6 +51,18 @@ class HitFinder():
         self.hits = BaseHit.get_hits_from_game(self.am.game, self.am.protobuf_game, self.am.id_creator, self.am.data_frame, first_touch_frames)
         self.hit_frames = list(self.hits.keys())
 
+class RawDataManager():
+    def __init__(self, data):
+        self.data = data
+    @staticmethod
+    def save_raw_data(datain, dataout):
+        dill.dump(datain, open(r'D:\\Documents\\RL Replays\\rawin.p', 'wb'))
+        dill.dump(dataout, open(r'D:\\Documents\\RL Replays\\rawout.p', 'wb'))
+    @staticmethod
+    def load_raw_data():
+        datain = dill.load(open(r'D:\\Documents\\RL Replays\\rawin.p', 'rb'))
+        dataout = dill.load(open(r'D:\\Documents\\RL Replays\\rawout.p', 'rb'))
+        return datain, dataout
 class HitFinderFactory():
     def __init__(self):
         root = tk.Tk()
@@ -80,40 +93,44 @@ if __name__ == "__main__":
     try:
         raw = input('Load Hit Finder? (y/n)')
         if raw == 'y':
-            # b = HitFinderFactory.load_batch_data()
-            # load hard coded for now for quickness
-            # path = os.path.join('Documents', 'RL Replays', 'batchdata1.p')
-            # b = pickle.load(open(r'D:\\Documents\\RL Replays\\batchdata.p', 'rb'))
             h = HitFinder()
-            # h.load_from_protobuf_hardcoded()
-            h = HitFinderFactory.load_analysis_manager()
+            h.am = HitFinderFactory.load_analysis_manager()
             h.get_hits()
-            b = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 5)
+            b_in, b_out = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 1)
+            # rawin, rawout = RawDataManager.load_raw_data()
+        if raw == 't': # Test network quickly
+            rawin, rawout = RawDataManager.load_raw_data()
 
         else:
             h = HitFinder()
             h.load_replay()
             h.get_hits()
             # print(h.hits)
-            b = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 5)
+            rawin, rawout = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 5)
             # HitFinderFactory.save_batch_data(b)
             # h.save_protobuf_hardcoded()
             try:
             
                 HitFinderFactory.save_analysis_manager(h.am)
+                RawDataManager.save_raw_data(rawin.to_numpy(), rawout.to_numpy())
             except Exception as e:
                 PrintException()
-                print('Trying trace before pickling')
-                dill.detect.trace(True)
-                dill.detect.errors(h.am)
-                dill.pickles(h.am)
+                # print('Trying trace before pickling')
+                # dill.detect.trace(True)
+                # dill.detect.errors(h.am)
+                # dill.pickles(h.am)
                 
         
-        print(b)
+        # print(b_in)
+        # rawin = b_in.to_numpy()
+        # rawout = b_out.to_numpy()
+        # frameWindow = b_in.batch[0] # quicker debugging
+        # gameFrame = frameWindow.frames[0]
+        # playerState = gameFrame.p1
 
-        frameWindow = b.batch[0] # quicker debugging
-        gameFrame = frameWindow.frames[0]
-        playerState = gameFrame.p1
+        #Neural Network testing
+        nn = NeuralNetworkTrainer.LSTM_Model()
+        nn.train(rawin, rawout)
     except Exception as e:
         PrintException()
 

@@ -15,6 +15,9 @@ matplotlib = "*"
 cpickle = "*"
 dill = "*"
 readline = "*"
+keras = "*"
+prettyprint = "*"
+termcolor = "*"
 
 [requires]
 python_version = "3.7"
