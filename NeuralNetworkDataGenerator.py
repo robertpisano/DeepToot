@@ -10,6 +10,7 @@ from tkinter import filedialog
 import carball
 from carball.analysis.events.hit_detection.base_hit import BaseHit
 from carball.analysis.analysis_manager import AnalysisManager
+from carball.controls.controls import ControlsCreator
 # from ....generated.api.stats.events_pb2 import Hit
 from typing import Dict
 import numpy as np
@@ -101,6 +102,32 @@ class TrainingBatch():
         tempfix = np.swapaxes(temp, 0, 2) # Data comes in with axis 0 and 2 swapped, so swap them to proper
         return tempfix
 
+class GameMemory():
+    def __init__(self, window_length):
+        self.short_term_memory_length = window_length
+        self.memory_queue = []
+    
+    def _short_term_memory_start(self):
+        return (self.memory_queue.length - self.memory_length)
+
+    def append_memory(self, GameTickPacket):
+        self.memory_queue.append
+    
+    def get_short_term_memory(self):
+        return self.memory_queue[self._short_term_memory_start():]
+        
+    def get_memory(self):
+        return self.memory_queue
+
+class NeuralNetworkManager():
+    WINDOW_LENGTH = 10
+
+    def __init__(self):
+        self.memory = GameMemory(self.WINDOW_LENGTH)
+
+    def get_control_update(self, g: GameTickPacket):
+        self.memory.append(g)
+        # Calculate output from nn
 
 # Generate data from when ball was hit and in/outWindow
 def generate_nn_data_from_hits(am: AnalysisManager, hits: Dict, inWindow: int, outWindow: int):
@@ -143,27 +170,49 @@ def generate_nn_data_from_hits(am: AnalysisManager, hits: Dict, inWindow: int, o
     
     
     return inBatch, outBatch
-# def generate_nn_data_from_hits(am: AnalysisManager, hits: Dict, inWindow: int, outWindow: int):
-#     hit_frames = list(hits.keys())
-#     object_keys = am.data_frame.columns.levels[0]
-#     data_keys = am.data_frame.columns.levels[1]
-#     batch = TrainingBatch()
-#
-#     for h in hit_frames:
-#         fw1 = FrameWindow() # Refresh current frame window for appending to training batch
-#         for i in range(h-inWindow, h+outWindow):
-#             # Pull gameobject data from analysis manager object
-#             game_data_at_frame = am.data_frame.loc[i]
-#             # goal_position = GoalPosition() # Own Goal position (0/1)
-#             p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
-#             p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
-#             ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
-#             # Create Game frame object
-#             g1 = GameFrame(p1, p2, ball)
-#             # Append game frame to frame window
-#             fw1.append_game_frame(g1)
-#         # Append frame window to training batch
-#         batch.append_window(fw1)
-#     return batch
+
+
+def generate_inputs_from_first_hit(am: AnalysisManager, hits: Dict, inWindow: int, outWindow: int):
+    hit_frames = list(hits.keys())
+    
+    object_keys = am.data_frame.columns.levels[0]
+    data_keys = am.data_frame.columns.levels[1]
+    inBatch = TrainingBatch()
+    outBatch = TrainingBatch()
+
+    # Force h as first hit
+    h = hit_frames[0]
+
+    fw1 = FrameWindow() # Refresh current frame window for appending to inBatch
+    fw2 = FrameWindow() # Refresh current frame window for appending to outBatch
+    for i in range(h-inWindow, h):
+        # Pull gameobject data from analysis manager object
+        game_data_at_frame = am.data_frame.loc[i]
+        # goal_position = GoalPosition() # Own Goal position (0/1)
+        p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
+        p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
+        ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
+        # Create Game frame object
+        g1 = GameFrame(p1, p2, ball)
+        # Append game frame to frame window
+        fw1.append_game_frame(g1)
+
+    for j in range(h+1, h+outWindow+1): # make output window data
+        game_data_at_frame = am.data_frame.loc[j]
+        # goal_position = GoalPosition() # Own Goal position (0/1)
+        p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
+        p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
+        ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
+        # Create Game frame object
+        g2 = GameFrame(p1, p2, ball)
+        # Append game frame to frame window
+        fw2.append_game_frame(g2)
+    # Append frame window to training input batch
+    inBatch.append_window(fw1)
+    # Append frame window to training output batch
+    outBatch.append_window(fw2)
+
 def generate_nn_data_from_saved_data_frame(data: DataFrame):
     None
+
+def generate_nn_data_from_bot(, )

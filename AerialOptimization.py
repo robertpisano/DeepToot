@@ -34,8 +34,8 @@ class AerialOptimizer():
 
 
     def __init__(self):
-#################GROUND DRIVING OPTIMIZER SETTTINGS##############
-        self.d = GEKKO(remote=False) # Driving on ground optimizer
+#################AERIAL OPTIMIZER SETTTINGS##############
+        self.d = GEKKO(remote=False) # use local server, not remote server
 
 # nt1 nt2 are how many the first half and second half of time will be split
 # t1 t2 are then concatenated to make the time vector which has variable deltaT
@@ -46,33 +46,32 @@ class AerialOptimizer():
         # t2 = np.linspace(0.55, 1.0, nt2)
         # self.d.time = np.concatenate((t1,t2), axis=0)
 
-        ntd = 9
+        ntd = 9 # Number of time steps for the simulation
 
         self.d.time = np.linspace(0, 1, ntd) # Time vector normalized 0-1
 
-        # options
-        self.d.options.NODES = 3
-        self.d.options.SOLVER = 3
-        self.d.options.IMODE = 6# MPC mode
+        # Optimizer Options
+        self.d.options.NODES = 3 
+        self.d.options.SOLVER = 3 # IPOPT solver (#3), #1 is used for integer solutions, but takes much longer to solve
+        self.d.options.IMODE = 6 # MPC mode
         # m.options.IMODE = 9 #dynamic ode sequential
         self.d.options.MAX_ITER = 800
         self.d.options.MV_TYPE = 1
         self.d.options.DIAGLEVEL = 0
 
-        # final time for driving optimizer
-        self.tf = self.d.FV(value=1.0,lb=0.1,ub=100.0)
+        # final time for driving optimizer (this is the value we are minimizing)
+        self.tf = self.d.FV(value=1.0,lb=0.5,ub=100.0)
 
-        # allow gekko to change the tfd value
+        # allow gekko to change the tf value
         self.tf.STATUS = 1
 
-        # Scaled time for Rocket league to get proper time
-
-        # Acceleration variable
+        # Acceleration variable (boost or no boost)
         self.a = self.d.MV(lb = 0, ub = 1)
         self.a.STATUS = 1
         # self.a.DCOST = 1e-8
 
         # Torque input <Tx, Ty, Tz>, will change the q_omega[1:3] values since q_omega[0] is always zero in pure quaternion form
+        # Same as roll, pitch, yaw inputs from joystick
         self.alpha = self.d.Array(self.d.MV, 3)
         for i in self.alpha:
             # i.value = 0
@@ -85,11 +84,11 @@ class AerialOptimizer():
         for qi in self.q_omega:
             # qi.value = 0
             # qi.STATUS = 1
-            qi.upper = .7
-            qi.lower = -.7
+            qi.upper = 5.5
+            qi.lower = -5.5
             # qi.DCOST = 1e-5
         # self.q_omega[0].status = 0# Shut off scalar part of omega quaternion
-        self.omega_mag = self.d.Var() # Magnitude of angular velocity
+        self.omega_mag = self.d.Var() # Magnitude of angular velocity (can be used to limit maximum angular velocity since the game has a limit)
 
         # end time variables to multiply u2 by to get total value of integral
         # Time vector length is nt1 and nt2
@@ -98,8 +97,8 @@ class AerialOptimizer():
         self.final = self.d.Param(value = self.p_d)
 
         # gravity
-        self.g = self.d.Param(value = -650)
-        self.D_b = self.d.Param(value = -0.0305)
+        self.g = self.d.Param(value = -650) # Gravity value in uu/s^2
+        self.D_b = self.d.Param(value = -0.0305) # Ball drag coefficient
 
         # Drag and torque coefficient
         self.T_r = self.d.Param(value = -36.07956616966136) # torque coefficient for roll
@@ -108,28 +107,28 @@ class AerialOptimizer():
         self.D_r = self.d.Param(value = -4.47166302201591) # drag coefficient for roll
         self.D_p = self.d.Param(value = -2.798194258050845) # drag coefficient for pitch
         self.D_y = self.d.Param(value = -1.886491900437232) # drag coefficient for yaw
-        self.amax = self.d.Param(value = 991.666+60)
+        self.amax = self.d.Param(value = 991.666+60) # acceleration coefficient for boost
 
-        # integral over time for u_pitch^2
+        # integral over time for u_pitch^2 (this is used to minimize boost usage by integration S(u)dt)
         # self.u2_pitch = self.d.Var(value=0)
         # self.d.Equation(self.u2.dt() == 0.5*self.u_pitch**2)
 
-    def optimizeAerial(self, si, sf, vi, vf, ri, rf, omegai, ball): #these are 1x2 vectors s or v [x, z]
+    def optimizeAerial(self, si, sf, vi, vf, ri, rf, omegai, ball):
         try:
             # Ball variables
-            self.bx = self.d.Var(value=ball.pos[0], lb=-4096, ub=4096) #x position
-            self.by = self.d.Var(value=ball.pos[1], lb=-5120, ub=5120) #y position
-            self.bz = self.d.Var(value = ball.pos[2], lb = 0, ub = 2000)
+            self.bx = self.d.Var(value=ball.pos[0], lb=-4096, ub=4096) # x position ball
+            self.by = self.d.Var(value=ball.pos[1], lb=-5120, ub=5120) # y position ball
+            self.bz = self.d.Var(value = ball.pos[2], lb = 0, ub = 2000) # z position ball
             self.bvx = self.d.Var(value = ball.vel[0])
             self.bvy = self.d.Var(value = ball.vel[1])
             self.bvz = self.d.Var(value = ball.vel[2])
 
             # variables intial conditions are placed here
-                # Position and Velocity in 2d
-
-            self.sx = self.d.Var(value=si[0], lb=-4096, ub=4096) #x position
-            self.sy = self.d.Var(value=si[1], lb=-5120, ub=5120) #y position
-            self.sz = self.d.Var(value = si[2], lb = 0, ub = 2000)
+            
+            # Car positions
+            self.sx = self.d.Var(value=si[0], lb=-4096, ub=4096) # x position
+            self.sy = self.d.Var(value=si[1], lb=-5120, ub=5120) # y position
+            self.sz = self.d.Var(value = si[2], lb = 0, ub = 2000) # z position
 
             self.q = self.d.Array(self.d.Var, 4) #orientation quaternion
             self.q[0].value = ri[0]
@@ -137,6 +136,8 @@ class AerialOptimizer():
             self.q[2].value = ri[2]
             self.q[3].value = ri[3]
 
+            # Normalized quaternion (unit quaternion) this is derived incase the angular velocity differentials make the quaternion
+            # not a unit vector
             self.q_norm = [None, None, None, None] # Initialize q_norm
             self.q_norm[0] = self.d.Var(value = ri[0]) #Intermediate(equation = self.q[0]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
             self.q_norm[1] = self.d.Var(value = ri[1]) #Intermediate(equation = self.q[1]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
@@ -144,20 +145,20 @@ class AerialOptimizer():
             self.q_norm[3] = self.d.Var(value = ri[3]) #Intermediate(equation = self.q[3]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
 
 
-            # self.q_omega[0].value = 0
-            # self.q_omega[1].value = omegai[1]
-            # self.q_omega[2].value = omegai[2]
-            # self.q_omega[3].value = omegai[3]
+            self.q_omega[0].value = 0
+            self.q_omega[1].value = omegai[1]
+            self.q_omega[2].value = omegai[2]
+            self.q_omega[3].value = omegai[3]
 
             # Intermediate value since rotating vector by quateiron requires q*v*q^-1 (this is q*v)
-            ux = [0,1,0,0]
+            ux = [0,1,0,0] # ux in quaternion notation (first value is the scalar componnent, and it should be 0)
             self.hi = [None, None, None, None]
             self.hi[0] = self.d.Intermediate(equation = -1* (self.q_norm[1]*ux[1]))
             self.hi[1] = self.d.Intermediate(equation = (self.q_norm[0]*ux[1]))
             self.hi[2] = self.d.Intermediate(equation = (self.q_norm[3]*ux[1]))
             self.hi[3] = self.d.Intermediate(equation =  -1* (self.q_norm[2]*ux[1]))
 
-            # This is the unit vector that points in the direction of the nose of the car (used to find the v.dt() from thruster)
+            # This is the unit vector that points in the direction of the nose of the car (used to find the v.dt() vector from thruster)
             self.heading = self.d.Array(self.d.Var, 3)
             # Set intiial condition of heading
             h = ri.rotate(ux[1:])
@@ -166,11 +167,11 @@ class AerialOptimizer():
             self.heading[2].value = h[2]
             print('h:', h)
 
-
+            # Car velocities
             # # self.v_mag = self.d.Var(value = vi, ub = 2300, lb =0)
             self.vx = self.d.Var(value=vi[0]) #x velocity
             self.vy = self.d.Var(value=vi[1]) #y velocity
-            self.vz = self.d.Var(value=vi[2])
+            self.vz = self.d.Var(value=vi[2]) #z velocity
 
     # Differental equations
 
@@ -187,17 +188,16 @@ class AerialOptimizer():
             self.d.Equation(self.q_norm[3] == self.q[3]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
 
             # Omega/dt
-            # self.d.Equation(self.q_omega[1].dt() == self.tf * ((self.alpha[0] * self.T_r) + (self.q_omega[1]*self.D_r)))
-            # self.d.Equation(self.q_omega[2].dt() == self.tf * ((self.alpha[1] * self.T_p) + (self.q_omega[2]*self.D_p * (1-self.d.sqrt(self.alpha[1]*self.alpha[1])))))
-            # self.d.Equation(self.q_omega[3].dt() == self.tf * ((self.alpha[2] * self.T_y) + (self.q_omega[3]*self.D_y * (1-self.d.sqrt(self.alpha[2]*self.alpha[2])))))
-            self.d.Equation(self.q_omega[1].dt() == self.tf * (0.5 * self.alpha[0] * self.T_r)) # I'm multiplying the acceleration output by 0.5 to keep paths reachable by feedback controller only
-            self.d.Equation(self.q_omega[2].dt() == self.tf * (0.5 * self.alpha[1] * self.T_p))
-            self.d.Equation(self.q_omega[3].dt() == self.tf * (0.5 * self.alpha[2] * self.T_y))
+            self.d.Equation(self.q_omega[1].dt() == self.tf * ((self.alpha[0] * self.T_r) + (self.q_omega[1]*self.D_r)))
+            self.d.Equation(self.q_omega[2].dt() == self.tf * ((self.alpha[1] * self.T_p) + (self.q_omega[2]*self.D_p * (1-self.d.sqrt(self.alpha[1]*self.alpha[1])))))
+            self.d.Equation(self.q_omega[3].dt() == self.tf * ((self.alpha[2] * self.T_y) + (self.q_omega[3]*self.D_y * (1-self.d.sqrt(self.alpha[2]*self.alpha[2])))))
+            # self.d.Equation(self.q_omega[1].dt() == self.tf * (0.5*self.alpha[0] * self.T_r)) # I'm multiplying the acceleration output by 0.5 to keep paths reachable by feedback controller only
+            # self.d.Equation(self.q_omega[2].dt() == self.tf * (0.5*self.alpha[1] * self.T_p))
+            # self.d.Equation(self.q_omega[3].dt() == self.tf * (0.5*self.alpha[2] * self.T_y))
 
 
             # Get unit vector pointing in heading direction (hi is q*v, this is (q*v)*q^-1) Thats why it has negatives on q_norm[1,2,3]
-            # Unit x vector
-            ux = [0, 1, 0, 0]
+            ux = [0, 1, 0, 0] # Unit x vector
             self.d.Equation(self.heading[0] == (self.hi[0]*-1*self.q_norm[1]) + (self.hi[1]*self.q_norm[0]) + (self.hi[2]*-1*self.q_norm[3]) - (self.hi[3]*-1*self.q_norm[2]))
             self.d.Equation(self.heading[1] == (self.hi[0]*-1*self.q_norm[2]) - (self.hi[1]*-1*self.q_norm[3]) + (self.hi[2]*self.q_norm[0]) + (self.hi[3]*-1*self.q_norm[1]))
             self.d.Equation(self.heading[2] == (self.hi[0]*-1*self.q_norm[3]) + (self.hi[1]*-1*self.q_norm[2]) - (self.hi[2]*-1*self.q_norm[1]) + (self.hi[3]*self.q_norm[0]))
@@ -250,9 +250,9 @@ class AerialOptimizer():
             # self.d.Obj(self.final * 1e9 * ((self.q_norm[0]*rf[3]) + (self.q_norm[1]*rf[2]) - (self.q_norm[2]*rf[1]) + (self.q_norm[3]*rf[0]))**2)
 
             # Collide with ball minimum time objective
-            self.d.Obj(self.final*1e2*((self.sx - self.bx)**2))
-            self.d.Obj(self.final*1e2*((self.sy - self.by)**2))
-            self.d.Obj(self.final*1e2*((self.sz - self.bz)**2))
+            self.d.Obj(self.final*1e3*((self.sx - self.bx)**2))
+            self.d.Obj(self.final*1e3*((self.sy - self.by)**2))
+            self.d.Obj(self.final*1e3*((self.sz - self.bz)**2))
 
             # Limit the x axis rotation
             # self.d.Obj(1e10 * (self.q_omega[1]-0)**2)
@@ -269,7 +269,7 @@ class AerialOptimizer():
 
             return self.a, self.ts
 
-        except Exception as e:
+        except Exception:
             AerialOptimizer.PrintException()
 
     def getTrajectoryData(self):
@@ -368,6 +368,7 @@ def plotData(figNum, ts, sx, sy, sz, vx, vy, vz, q_omega, a, opt):
     plt.plot(ts, q_omega[1], 'r-')
     plt.plot(ts, q_omega[2], 'g-')
     plt.plot(ts, q_omega[3], 'b-')
+    plt.plot(ts, opt.omega_mag, 'o-')
     plt.ylabel('angular velocities')
     plt.ylim(-2, 2)
 
@@ -375,7 +376,7 @@ def plotData(figNum, ts, sx, sy, sz, vx, vy, vz, q_omega, a, opt):
     plt.plot(ts, opt.alpha[0], 'r-')
     plt.plot(ts, opt.alpha[1], 'b-')
     plt.plot(ts, opt.alpha[2], 'g-')
-    plt.ylim(0, 5)
+    plt.ylim(0, 1.5)
     # plt.plot(ts, a[1], 'g-')
     # plt.plot(ts, a[2], 'b-')
     plt.ylabel('alpha')
@@ -388,6 +389,14 @@ def plotData(figNum, ts, sx, sy, sz, vx, vy, vz, q_omega, a, opt):
     # plt.plot(sx[0], sy[0], 'go') # Plot starting point of trajectory
     # plt.plot(0, 0, 'g*')
 
+def get_orientation_quaternion(df):
+    ux = np.array([1, 0, 0]) # Unit x vector
+    df = df/(np.linalg.norm(df)) # Normalize df vector
+    q_xyz = np.cross(ux, df) # If i do the order (ux, df) the y and z axes are flipped for some reason
+    q_w = np.sqrt((np.linalg.norm(ux) ** 2) * (np.linalg.norm(df) ** 2)) + np.dot(ux, df)
+    r_tf = Quaternion(scalar = q_w, vector = q_xyz)
+    r_tf = r_tf.normalised
+    return r_tf
 
 if __name__ == "__main__":
 
@@ -398,45 +407,40 @@ if __name__ == "__main__":
         opt2 = AerialOptimizer()
         opt3 = AerialOptimizer()
 
-    # First Trajectory
-        s_ti = [-1500.0, 2000.0, 100]
+    # Car states
+        s_ti = [0, 2000.0, 100]
         v_ti = [0, 0, 500]
         s_tf = [0.0, 0.0, 1000]
         v_tf = [0.00, 0.0, 500]
-        # Get starting orientation quaternion
+        
+        s_ti2 = [0, -2000.0, 100]
+        v_ti2 = [0, 0, 500]
+        s_tf2 = [0.0, 0.0, 1000]
+        v_tf2 = [0.00, 0.0, 500]
+
+    # Get starting orientation quaternions
         ux = np.array([1, 0, 0]) # Unit x vector
-        di = np.array([0,-1,0]) # Starting vector to point towards
-        di = di/(np.linalg.norm(di)) # Make di a unit vector
-        q_xyz = np.cross(ux, di)
-        q_w = np.sqrt((np.linalg.norm(ux) ** 2) * (np.linalg.norm(di) ** 2)) + np.dot(ux, di)
-        r_ti = Quaternion(scalar = q_w, vector = q_xyz)
-        r_ti = r_ti.normalised
-
-        # Get final orientatiaon quaternion
-        df = np.array([0,-1,0])# final orientation vector to point towards
-        df = df/(np.linalg.norm(df)) # Normalize df vector
-        q_xyz = np.cross(ux, df) # If i do the order (ux, df) the y and z axes are flipped for some reason
-        q_w = np.sqrt((np.linalg.norm(ux) ** 2) * (np.linalg.norm(df) ** 2)) + np.dot(ux, df)
-        r_tf = Quaternion(scalar = q_w, vector = q_xyz)
-        r_tf = r_tf.normalised
-        r_tf = r_tf.conjugate
-
-        omega_ti = [1, 0, 0, 0] # initial angular velocity of car
-
+        r_ti = get_orientation_quaternion(np.array([0,-1,0])) # Starting vector to point towards
+        r_ti2 = get_orientation_quaternion(np.array([0,-1,0]))
+        # Get final orientation quaternions
+        r_tf = get_orientation_quaternion(np.array([0,-1,0]))# final orientation vector to point towards (not in use currently)
+        r_tf2 = get_orientation_quaternion(np.array([0,-1,0]))
+        omega_ti = [1, 0, 0, 0] # initial angular velocity of car1
+        omega_ti2 = [1, 0, 1, 0] # initial angular velocity of car2
         #Ball initial condition
         ball = Ball()
-        ball.pos = [2000, -2000, 1000]
-        ball.vel = [-1000, 1000, 800]
+        ball.pos = [-2000, 0, 100]
+        ball.vel = [1000, 0, 1200]
 
         # opt.COLDSTART = 1
         opt.LINEAR = 0
         a, t_star = opt.optimizeAerial(s_ti, s_tf, v_ti, v_tf, r_ti, r_tf, omega_ti, ball)
-
+        a2, t_start2 = opt2.optimizeAerial(s_ti2, s_tf2, v_ti2, v_tf2, r_ti2, r_tf2, omega_ti2, ball)
         print('heading:','\n', opt.heading[0].value,'\n', opt.heading[1].value,'\n', opt.heading[2].value)
         hmag = np.sqrt(np.power(opt.heading[0].value, 2) + np.power(opt.heading[1].value, 2) + np.power(opt.heading[2].value, 2))
         print('hmag:', hmag)
         plotData(5, opt.ts, opt.sx, opt.sy, opt.sz, opt.vx, opt.vy, opt.vz, opt.q_omega, opt.a, opt)
-
+        plotData(15, opt2.ts, opt2.sx, opt2.sy, opt2.sz, opt2.vx, opt2.vy, opt2.vz, opt2.q_omega, opt2.a, opt2)
         # data = [opt.sx, opt.sy, opt.sz]
         # graph = FixedGraph(opt.sx[-1], opt.sy[-1], opt.sz[-1], 10)
         # ani = animation.FuncAnimation(graph.fig, graph.run, frames=data, interval=200, repeat=True)
