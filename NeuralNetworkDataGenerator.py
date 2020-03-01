@@ -15,6 +15,7 @@ from carball.controls.controls import ControlsCreator
 from typing import Dict
 import numpy as np
 
+from rlbot.utils.structures.game_data_struct import GameTickPacket
 
 # Frame of data for neural network, is flattened and put in the proper order
 #
@@ -110,8 +111,8 @@ class GameMemory():
     def _short_term_memory_start(self):
         return (self.memory_queue.length - self.memory_length)
 
-    def append_memory(self, GameTickPacket):
-        self.memory_queue.append
+    def append_memory(self, g: GameTickPacket):
+        self.memory_queue.append(g)
     
     def get_short_term_memory(self):
         return self.memory_queue[self._short_term_memory_start():]
@@ -124,9 +125,9 @@ class NeuralNetworkManager():
 
     def __init__(self):
         self.memory = GameMemory(self.WINDOW_LENGTH)
-
+    
     def get_control_update(self, g: GameTickPacket):
-        self.memory.append(g)
+        self.memory.append_memory(g)
         # Calculate output from nn
 
 # Generate data from when ball was hit and in/outWindow
@@ -214,5 +215,3 @@ def generate_inputs_from_first_hit(am: AnalysisManager, hits: Dict, inWindow: in
 
 def generate_nn_data_from_saved_data_frame(data: DataFrame):
     None
-
-def generate_nn_data_from_bot(, )

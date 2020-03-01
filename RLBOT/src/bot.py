@@ -6,23 +6,42 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket
 from util.orientation import Orientation
 from util.vec import Vec3
 
-import rel_imp; rel_imp.init()
-# __package__ = '...'
-from ... import NeuralNetworkDataGenerator
+from rlbot.utils.game_state_util import GameState
+from rlbot.utils.game_state_util import CarState
+from rlbot.utils.game_state_util import Physics
+from rlbot.utils.game_state_util import Vector3
+from rlbot.utils.game_state_util import Rotator
+from rlbot.utils.game_state_util import BallState
+
+import sys
+import os
+sys.path.append(os.path.abspath("D:\Documents\DeepToot"))
+from NeuralNetworkDataGenerator import NeuralNetworkManager
+from ScenarioInterface import ScenarioCreator
 
 class MyBot(BaseAgent):
 
     def initialize_agent(self):
         # This runs once before the bot starts up
         self.controller_state = SimpleControllerState()
-        self.nn_manager = nndg.NeuralNetworkManager()
+        self.nn_manager = NeuralNetworkManager()
+        self.sc = ScenarioCreator()
+        self.sc.hardcoded_load()
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
-        self.nn_manager.get_control_update(packet)
-
+        # self.c = self.c+1
+        # print('counter ' + str(self.c))
+        # self.nn_manager.get_control_update(packet)
+        # print(len(self.nn_manager.memory.get_memory()))
         
-        return self.nn_manager.controls
+        self.sc.control_environment(self)
+        return self.controller_state
 
+def set_game_state_from_scenario(self):
+    game_state = GameState()
+    bpos, bvel = self.sc.get_ball
+    ball = BallState(Physics(location=Vec3(bpos), velocity=Vec3(bvel)))
+    return GameState(ball=ball)
 
 def find_correction(current: Vec3, ideal: Vec3) -> float:
     # Finds the angle from current to ideal vector in the xy-plane. Angle will be between -pi and +pi.
