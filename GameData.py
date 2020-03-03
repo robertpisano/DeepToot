@@ -19,12 +19,12 @@ class BallChasingInteractor():
 
     def _seconds_until_next_call(self):
         current_time = datetime.now()
-        return (self.last_call_time - current_time).total_seconds()
+        return (current_time - self.last_call_time).total_seconds()
 
     def _should_we_make_call(self):
         time_difference = self._seconds_until_next_call()
         seconds_to_wait = self.SECONDS_IN_MINUTE / self.CALLS_PER_MINUTE
-        return time_difference >= seconds_to_wait
+        return time_difference >= seconds_to_wait and time_difference > 0
 
     def _wait_to_make_call(self):
         if not self._should_we_make_call(): 
