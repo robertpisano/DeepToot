@@ -4,8 +4,24 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pylint = "*"
 
 [packages]
+numpy = "*"
+rlbot = "*"
+glob3 = "*"
+carball = "*"
+matplotlib = "*"
+cpickle = "*"
+dill = "*"
+readline = "*"
+keras = "*"
+prettyprint = "*"
+termcolor = "*"
+numpy-stl = "*"
+pyquaternion = "*"
+gekko = "*"
+rel-imp = "*"
 
 [requires]
 python_version = "3.7"
