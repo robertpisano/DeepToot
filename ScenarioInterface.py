@@ -11,6 +11,7 @@ import threading
 import time
 import numpy as np
 
+from rlbot.agents.base_agent import SimpleControllerState
 from rlbot.utils.game_state_util import GameState
 from rlbot.utils.game_state_util import CarState
 from rlbot.utils.game_state_util import Physics
@@ -18,8 +19,9 @@ from rlbot.utils.game_state_util import Vector3
 from rlbot.utils.game_state_util import Rotator
 from rlbot.utils.game_state_util import BallState as rlBallState
 
-from util.orientation import Orientation
-from util.vec import Vec3
+
+# from RLBOT.src.util.orientation import Orientation
+# from util.vec import Vec3
 
 # Initial game state 
 class InitialGameState():
@@ -35,6 +37,11 @@ class InitialGameState():
         return np.asarray(pos), np.asarray(vel)
     
     # TODO: Add other player parameters for return here
+    def get_orange_data(self):
+        pos = [self.orangeCar.frameData['pos_x'], self.orangeCar.frameData['pos_y'], self.orangeCar.frameData['pos_z']]
+        vel = [self.orangeCar.frameData['vel_x'], self.orangeCar.frameData['vel_y'], self.orangeCar.frameData['vel_z']]
+        return np.asarray(pos), np.asarray(vel)
+
     def get_blue_data(self):
         pos = [self.blueCar.frameData['pos_x'], self.blueCar.frameData['pos_y'], self.blueCar.frameData['pos_z']]
         vel = [self.blueCar.frameData['vel_x'], self.blueCar.frameData['vel_y'], self.blueCar.frameData['vel_z']]
@@ -52,10 +59,32 @@ class PlayerControls():
             self.orangeControls = players[1].controls.loc[frameStart:frameStart+scenarioLength]
             self.blueControls = players[0].controls.loc[frameStart:frameStart+scenarioLength]
 
+    def get_blue_controls(self, counter): # Return the controls in the SimpleControllerState() form
+        return self.get_controller_state(self.blueControls, counter)
+
+    def get_orange_controls(self, counter):
+        return self.get_controller_state(self.orangeControls, counter)
+
+    def get_controller_state(self, controls, counter): # take player controls data and parse into the SimpleControllerState() class and return
+        con = SimpleControllerState()
+        controls_fixed = self.fix_controls(controls) # Fix NAN, etc..
+        con.steer = controls_fixed.loc[self.frameStart+counter].steer
+        con.pitch = controls_fixed.loc[self.frameStart+counter].pitch
+        con.yaw = controls_fixed.loc[self.frameStart+counter].yaw
+        con.roll = controls_fixed.loc[self.frameStart+counter].roll
+        con.jump = controls_fixed.loc[self.frameStart+counter].jump
+        con.boost = controls_fixed.loc[self.frameStart+counter].boost
+        con.handbrake = controls_fixed.loc[self.frameStart+counter].handbrake
+        con.use_item = False
+        return con
+
+    def fix_controls(self, controls): # Takes control data, fixes NAN etc...
+        return None
+
 class ScenarioCreator():
     start = False
     running = False
-
+    counter = 0
     def __init__(self):
         self.starttime = time.time()
         self.thread = threading.Thread(target=self.get_user_input)
@@ -96,11 +125,14 @@ class ScenarioCreator():
             # self.running = True
             print('location: ', b.physics.location.x, b.physics.location.y, b.physics.location.z)
             print('velocity: ', b.physics.velocity.x, b.physics.velocity.y, b.physics.velocity.z)
-    
-        
+            #TODO: Return 1st controller state here 
+            #TODO: Increment counter +1
+        if self.start == False and self.running == True: #Iterate through controls
+            controller = self.playerControls.get_controller_state(self.playerControls.get_blue_controls(), self.counter)
+            bot.controller_state = controller
 
 
-    def get_user_input(self):
+    def get_user_input(self): # Supposed to be CLI, but rn is just running on a thread
         length = 5.0
         while(True):
             time.sleep(time.time() % length)
