@@ -17,7 +17,7 @@ import sys
 import os
 sys.path.append(os.path.abspath("D:\Documents\DeepToot"))
 from NeuralNetworkDataGenerator import NeuralNetworkManager
-from ScenarioInterface import ScenarioCreator
+from ScenarioInterface import SenarioCreator
 
 class MyBot(BaseAgent):
 
@@ -35,6 +35,7 @@ class MyBot(BaseAgent):
         # print(len(self.nn_manager.memory.get_memory()))
         
         self.sc.control_environment(self)
+        print(self.sc.counter)
         return self.controller_state
 
 def set_game_state_from_scenario(self):
