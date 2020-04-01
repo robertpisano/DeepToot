@@ -94,7 +94,9 @@ class TrainingBatch():
         for i, b in enumerate(self.batch):
             if i == 0:
                 temp = np.expand_dims(b.to_numpy(), axis = 2)
+                # temp = b.to_numpy()
             else:
+                print('i: ' + str(i))
                 temp = np.append(temp, np.expand_dims(b.to_numpy(), axis=2), axis=2)
         # Convert data to properly structured shape for neural network training
         # Axis 0: batch axis
@@ -213,5 +215,68 @@ def generate_inputs_from_first_hit(am: AnalysisManager, hits: Dict, inWindow: in
     # Append frame window to training output batch
     outBatch.append_window(fw2)
 
-def generate_nn_data_from_saved_data_frame(data: DataFrame):
-    None
+def generate_nn_data_from_saved_data_frames(inWindow: int, outWindow: int):
+    from RLBOT.src.hitFinder import RawReplayData
+    file_path = filedialog.askdirectory() #Ask for directory of pickled files
+    replays_path = []
+    for r in os.listdir(file_path):
+        if r.endswith(".p"):
+            replays_path.append(file_path + '/' + r)
+
+    inBatch = TrainingBatch()
+    outBatch = TrainingBatch()
+    for r in replays_path:
+        # From replay file, initialize RawReplayData
+        raw_replay_data = RawReplayData().load_from(r)
+
+        # Data frame and Hit framess
+        print(raw_replay_data.hits)
+        type(raw_replay_data.hits)
+        hit_frames = list(raw_replay_data.hits)
+        data = raw_replay_data.game
+        
+        object_keys = data.columns.levels[0]
+        data_keys = data.columns.levels[1]
+
+
+        for hitnum, h in enumerate(hit_frames):
+            fw1 = FrameWindow() # Refresh current frame window for appending to inBatch
+            fw2 = FrameWindow() # Refresh current frame window for appending to outBatch
+            for i in range(h-inWindow, h):
+                # Pull gameobject data from analysis manager object
+                game_data_at_frame = data.loc[i]
+                # goal_position = GoalPosition() # Own Goal position (0/1)
+                p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
+                p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
+                #TODO: Make sure to check if object_keys[2] is the ball, also make sure not downloading 2v2 games
+                ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
+                # Create Game frame object
+                g1 = GameFrame(p1, p2, ball)
+
+                if(hitnum == 155):
+                    a = 1
+
+                # Append game frame to frame window
+                fw1.append_game_frame(g1)
+
+            for j in range(h+1, h+outWindow+1): # make output window data
+                game_data_at_frame = data.loc[j]
+                # goal_position = GoalPosition() # Own Goal position (0/1)
+                p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
+                p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
+                ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
+                # Create Game frame object
+                g2 = GameFrame(p1, p2, ball)
+                # Append game frame to frame window
+                fw2.append_game_frame(g2)
+            # Append frame window to training input batch
+            inBatch.append_window(fw1)
+            # Append frame window to training output batch
+            outBatch.append_window(fw2)
+
+            #Debugging purposes
+            print(inBatch)
+            
+        
+        
+    return inBatch, outBatch

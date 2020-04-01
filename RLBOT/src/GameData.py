@@ -49,7 +49,8 @@ class BallChasingInteractor():
     def get_replays(self):
         path = "/replays"
         url = f"{self.BASE_URL}{path}?"
-        url_params = { "season": 12, "min_rank" : "champion-3", "max-rank": "grand-champion" }
+        #TODO: is it supposed to be min_rank or min-rank?, can we add the 1v1 only here ?
+        url_params = { "season": 12, "min_rank" : "champion-3", "max-rank": "grand-champion", "Ranked-Duels": "on" }
         for key, value in url_params.items():
             url = f"{url}{key}={value}&"
         #if there is a next_url start from the initial get_replays call

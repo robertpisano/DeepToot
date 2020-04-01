@@ -11,7 +11,7 @@ from pandas import DataFrame
 import tkinter as tk
 from tkinter import filedialog
 import carball
-from NeuralNetworkDataGenerator import NeuralNetworkManager
+from .NeuralNetworkDataGenerator import NeuralNetworkManager
 from carball.analysis.events.hit_detection.base_hit import BaseHit
 from carball.analysis.utils.proto_manager import ProtobufManager
 from carball.analysis.analysis_manager import AnalysisManager
@@ -26,6 +26,9 @@ class HitFinder():
         self.hits = [] # Dictionary that carball BaseHit.get_hits_from_game() returns
         self.hit_frames = [] # List of frame numbers that hits happened at to make accessing self.hits easier since it is an unordered dictionary
     
+    def load_from_am(self, analysis_manager: AnalysisManager):
+        self.am = analysis_manager
+
     def load_replay(self):
         # Tkinter frame for windows explorer dialog to pop up
         root = tk.Tk()
@@ -87,6 +90,12 @@ class RawReplayData():
         self.game = gamedata
         self.players = playerControlData
         self.hits = hitData
+        
+    def save_at(self, path):
+        try:
+            dill.dump(self, open(path + '.p', 'wb'))
+        except Exception:
+            print(e)
 
     def save(self):
         try:
@@ -95,7 +104,13 @@ class RawReplayData():
             os.umask(0)
             os.makedirs(r'D:\\Documents\\RL Replays\\rawForControls', exist_ok=True, mode=0o777)
             dill.dump(self, open('D:\\Documents\\RL Replays\\rawForControls\\rawReplay.p', 'wb'))
-            
+
+    @staticmethod
+    def load_from(path):
+        try:
+            return dill.load(open(path, 'rb'))
+        except:
+            print('error with dill.load on pickle path')
     # TODO: Hard coded loading right now, need to find way to do dynamic loading? or better type of loading
     @staticmethod
     def load():

@@ -23,3 +23,6 @@ rel-imp = "*"
 
 [requires]
 python_version = "3.7"
+
+[scripts]
+toot = "python toot.py"

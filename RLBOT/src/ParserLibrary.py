@@ -111,6 +111,7 @@ class ReplayConverter():
 #
 # Save CSV files in chosen folder
     def convert_and_save_replays(self):
+        from .hitFinder import HitFinder, RawReplayData
         root = tk.Tk()
         root.withdraw()
         self.file_path = filedialog.askdirectory() # open directory dialog
@@ -129,8 +130,27 @@ class ReplayConverter():
             self.game.initialize(loaded_json = json_file) # Initialize game with each file path
             analysis_manager = AnalysisManager(self.game) # Initialize analysis_manager
             analysis_manager.create_analysis() # Analze replay
-            data = analysis_manager.get_data_frame()
-            data.to_csv(self.output_path + '/' + str(i) + '.csv')
+
+            # Get hit raw data
+            hit_finder = HitFinder()
+            hit_finder.load_from_am(analysis_manager)
+            hit_finder.get_hits()
+            hit_frames = hit_finder.hit_frames # List of frame numbers that hits happened at
+
+            # Get controls data
+            controls_data = ReplayConverter.get_controls_from_replay(self.game)
+
+
+            raw_replay = analysis_manager.get_data_frame() # Raw replay data frame
+
+            # Initialize RawReplayData class with data from above
+            raw_replay_data = RawReplayData()
+            raw_replay_data.setData(raw_replay, controls_data, hit_frames)
+
+            # Save raw replay data
+            raw_replay_data.save_at(self.output_path + '/' + str(i))
+
+            # data.to_csv(self.output_path + '/' + str(i) + '.csv')
             # self.gameDataList.append(data) # append pandas data to list
             # self.gameList.append(self.game)
 
