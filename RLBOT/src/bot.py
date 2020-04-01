@@ -15,9 +15,9 @@ from rlbot.utils.game_state_util import BallState
 
 import sys
 import os
-sys.path.append(os.path.abspath("D:\Documents\DeepToot"))
+sys.path.append(os.path.abspath("D:\Documents\DeepToot\RLBOT\src"))
 from NeuralNetworkDataGenerator import NeuralNetworkManager
-from ScenarioInterface import SenarioCreator
+from ScenarioInterface import ScenarioCreator
 
 class MyBot(BaseAgent):
 

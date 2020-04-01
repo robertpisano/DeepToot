@@ -12,8 +12,11 @@ import time
 import numpy as np
 
 # Plotting Library
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+try:
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+except Exception as e:
+    print(e)
 
 # RLBOT library stuff
 from rlbot.agents.base_agent import SimpleControllerState
@@ -124,7 +127,7 @@ class ScenarioCreator():
     start = False
     running = False
     counter = 0
-    counter_length = 600
+    counter_length = 100
     packets = []
 
     def __init__(self):
@@ -156,19 +159,19 @@ class ScenarioCreator():
     # Load hardcoded replay data into self
     def hardcoded_load(self):
         self.rrd = RawReplayData.load()
-        self.get_scenario_data(self.rrd, 3300, 1700)
+        self.get_scenario_data(self.rrd, 140, 1700)
     
     # Control the rl environment
     def control_environment(self, bot):
         try:
             
             if self.start == False and self.running == True: #Iterate through controls
-                controller = self.playerControls.get_controller_state(self.playerControls.blueControls, self.counter)
+                controller = self.playerControls.get_controller_state(self.playerControls.orangeControls, self.counter)
                 bot.controller_state = controller
                 if(self.counter > self.counter_length): self.event.set()
                 self.counter = self.counter + 1
                 # Append bot packet to self.packets
-                self.packets.append(bot.packet)
+                # self.packets.append(bot.packet)
                 
             if self.start == True and self.running == False: # Set initial state
                 bpos, bvel = self.initialState.get_ball_data()
@@ -180,7 +183,7 @@ class ScenarioCreator():
                 self.running = True
                 print('location: ', b.physics.location.x, b.physics.location.y, b.physics.location.z)
                 print('velocity: ', b.physics.velocity.x, b.physics.velocity.y, b.physics.velocity.z)
-                controller = self.playerControls.get_controller_state(self.playerControls.blueControls, self.counter)
+                controller = self.playerControls.get_controller_state(self.playerControls.orangeControls, self.counter)
                 bot.controller_state = controller
                 self.counter = 0
                 # Set self.packets to the initial packet
@@ -188,7 +191,7 @@ class ScenarioCreator():
 
 
         except Exception as e:
-            e.with_traceback()
+            e
 
 
     def get_user_input(self): # Supposed to be CLI, but rn is just running on a thread hardcoded to change every "length" amount of seconds
@@ -199,7 +202,7 @@ class ScenarioCreator():
                 self.event.wait()
 
                 # Plot replay data compared to collected data
-                self.plot_comparison()
+                # self.plot_comparison()
 
                 self.start = not self.start
                 if self.start == True:
