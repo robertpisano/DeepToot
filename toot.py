@@ -27,6 +27,7 @@ try:
             a = inBatch.to_numpy()
             print(a.shape)
         except Exception as e:
+            print('error somewhere here')
             print(e)
             # print('Input arguments for generate_basic cannot be cast to an integer')
         

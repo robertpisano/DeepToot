@@ -240,39 +240,39 @@ def generate_nn_data_from_saved_data_frames(inWindow: int, outWindow: int):
 
 
         for hitnum, h in enumerate(hit_frames):
-            fw1 = FrameWindow() # Refresh current frame window for appending to inBatch
-            fw2 = FrameWindow() # Refresh current frame window for appending to outBatch
-            for i in range(h-inWindow, h):
-                # Pull gameobject data from analysis manager object
-                game_data_at_frame = data.loc[i]
-                # goal_position = GoalPosition() # Own Goal position (0/1)
-                p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
-                p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
-                #TODO: Make sure to check if object_keys[2] is the ball, also make sure not downloading 2v2 games
-                ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
-                # Create Game frame object
-                g1 = GameFrame(p1, p2, ball)
+            try:
+                fw1 = FrameWindow() # Refresh current frame window for appending to inBatch
+                fw2 = FrameWindow() # Refresh current frame window for appending to outBatch
+                for i in range(h-inWindow, h):
+                    # Pull gameobject data from analysis manager object
+                    game_data_at_frame = data.loc[i]
+                    # goal_position = GoalPosition() # Own Goal position (0/1)
+                    p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
+                    p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
+                    #TODO: Make sure to check if object_keys[2] is the ball, also make sure not downloading 2v2 games
+                    ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
+                    # Create Game frame object
+                    g1 = GameFrame(p1, p2, ball)
 
-                # Append game frame to frame window
-                fw1.append_game_frame(g1)
+                    # Append game frame to frame window
+                    fw1.append_game_frame(g1)
 
-            for j in range(h+1, h+outWindow+1): # make output window data
-                game_data_at_frame = data.loc[j]
-                # goal_position = GoalPosition() # Own Goal position (0/1)
-                p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
-                p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
-                ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
-                # Create Game frame object
-                g2 = GameFrame(p1, p2, ball)
-                # Append game frame to frame window
-                fw2.append_game_frame(g2)
+                for j in range(h+1, h+outWindow+1): # make output window data
+                    game_data_at_frame = data.loc[j]
+                    # goal_position = GoalPosition() # Own Goal position (0/1)
+                    p1 = PlayerState(game_data_at_frame.loc[object_keys[0]]) # Own state
+                    p2 = PlayerState(game_data_at_frame.loc[object_keys[1]]) # Opponent state
+                    ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
+                    # Create Game frame object
+                    g2 = GameFrame(p1, p2, ball)
+                    # Append game frame to frame window
+                    fw2.append_game_frame(g2)
+            except Exception as e:
+                print(e)
             # Append frame window to training input batch
             inBatch.append_window(fw1)
             # Append frame window to training output batch
             outBatch.append_window(fw2)
-
-            #Debugging purposes
-            print(inBatch)
             
         
         
