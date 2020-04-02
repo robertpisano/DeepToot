@@ -230,8 +230,8 @@ def generate_nn_data_from_saved_data_frames(inWindow: int, outWindow: int):
         raw_replay_data = RawReplayData().load_from(r)
 
         # Data frame and Hit framess
-        print(raw_replay_data.hits)
-        type(raw_replay_data.hits)
+        # print(raw_replay_data.hits)
+        # type(raw_replay_data.hits)
         hit_frames = list(raw_replay_data.hits)
         data = raw_replay_data.game
         
@@ -252,9 +252,6 @@ def generate_nn_data_from_saved_data_frames(inWindow: int, outWindow: int):
                 ball = BallState(game_data_at_frame.loc[object_keys[2]]) # Ball State
                 # Create Game frame object
                 g1 = GameFrame(p1, p2, ball)
-
-                if(hitnum == 155):
-                    a = 1
 
                 # Append game frame to frame window
                 fw1.append_game_frame(g1)
