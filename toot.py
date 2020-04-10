@@ -27,9 +27,13 @@ try:
             a = inBatch.to_numpy()
             print(a.shape)
         except Exception as e:
-            print('error somewhere here')
-            print(e)
+            try:
+                sys.argv[2]
+            except:
+                print('generate_basic takes two arguments, inLength, outLength')
             # print('Input arguments for generate_basic cannot be cast to an integer')
+        import code
+        code.interact(local=locals())
         
     # Data Filtering Standardization
 
