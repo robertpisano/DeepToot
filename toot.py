@@ -34,7 +34,17 @@ try:
             # print('Input arguments for generate_basic cannot be cast to an integer')
         import code
         code.interact(local=locals())
-        
+    
+    # Plot generated_data
+    if sys.argv[1] == 'plot':
+        try:
+            from RLBOT.src.NeuralNetworkDataGenerator import DataAnalyzer
+            analyzer = DataAnalyzer()
+            analyzer.full_analysis()
+        except Exception as e:
+            print(e)
+            
+
     # Data Filtering Standardization
 
     # Train Network, validate and save
@@ -46,15 +56,10 @@ except Exception as e:
 
 
 # Strictly so i can run breakpoints for debugging. while in CLI it doesn't seem to run breakpoints
-# if __name__ == "__main__":
-#     import RLBOT.src.NeuralNetworkDataGenerator as nndg
-#     try:
-#         input_length = 2 # First argument passed in is input length for LSTM
-#         output_length = 2 # Second argument passed is output length for LSTM
-#         inb, outb = nndg.generate_nn_data_from_saved_data_frames(input_length, output_length)
-#     except Exception as e:
-#         print(e)
-#         # print('Input arguments for generate_basic cannot be cast to an integer')
-#     import code
-#     a = inb.batch
-#     code.interact(local=locals())
+if __name__ == "__main__":
+    try:
+        from RLBOT.src.NeuralNetworkDataGenerator import DataAnalyzer
+        analyzer = DataAnalyzer()
+        analyzer.full_analysis()
+    except Exception as e:
+        print(e)

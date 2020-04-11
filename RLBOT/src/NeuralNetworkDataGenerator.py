@@ -17,6 +17,8 @@ import numpy as np
 
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 
+import copy
+
 # Frame of data for neural network, is flattened and put in the proper order
 #
 # Player 1 data, Player 2 data, Ball data
@@ -131,6 +133,127 @@ class NeuralNetworkManager():
     def get_control_update(self, g: GameTickPacket):
         self.memory.append_memory(g)
         # Calculate output from nn
+
+# This class will interface with bot.py to start recording data of myself playing the game
+# To do this bot.py will have to be in the game, then a local player will also be in the game
+# Then through some method (maybe ask for input?) you will start to record data for some amount of time
+# Each GameTickPacket will be placed in an array then pickled to a file at the end of the generation 
+# This class should also "clean" the data to get only the player we are about's data
+class DataGeneratorManager():
+    def __init__(self, length: int):
+        import threading, datetime
+        self.frames = [] # The array of gametickpackets
+        self.started = False # The class is ready to take append frame data
+        self.finished = False
+        self.length = length # The length of the raw data (in frames) that we want to save
+        self.start_time = datetime.datetime.now()
+        self.export_thread = threading.Thread(target=self.export)
+        self.thread = threading.Thread(target=self.start) # Thread that will
+        self.thread.start()
+
+    def start(self): # Start the recording of data
+        import datetime
+        now = datetime.datetime.now() 
+        while((now - self.start_time).seconds < 3): # 3 second Timer to give me some time to get into game with controller
+            now = datetime.datetime.now()
+            print(now) # Debug
+        self.started = True # Set state to started
+        return True
+    
+    def append(self, packet): # Append packet to array of packets
+        self.frames.append(copy.deepcopy(packet)) # Need to deepcopy since i think packet is a pointer, and when i go to dump at the end it dumps the current packet over and over again, so it must be a pointer
+        self.check_complete() # Check if we should do the complete action
+
+    def check_complete(self): # check to see if we've recorded enough data and trigger export
+        if(len(self.frames) >= self.length): # If frames >= length then we set the state to finished and export the data
+            
+            self.finished = True
+            self.export_thread.start()
+        else:
+            print(len(self.frames))
+            print(self.frames[len(self.frames) - 1].game_cars[1].physics.location)
+            return
+
+    def export(self):
+        print(len(self.frames)) # Debug
+        import dill, os
+        dir_path = os.path.dirname(os.path.realpath(__file__)) # Get local file path
+        output_path = os.path.join(dir_path, "generated_data") # Add directory generated_data
+        file_path = os.path.join(output_path, "generated_data.p") # Add filename to path
+        dill.dump(self.frames, open(file_path, 'wb')) # Write frames to file as pickle
+        print('finished pickling') # Debug
+
+# Class that will load packet data that was saved from the DataGeneratorManager class
+# Will plot the data for analysis, choose which player to analyze
+class DataAnalyzer():
+
+    def __init__(self):
+        self.frames = []
+        self.load_generated_data()
+        self.initialize_plots()
+
+
+    # Initialize axes and figures to plot on
+    def initialize_plots(self):
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import Axes3D
+        self.fig = plt.figure(1)
+        self.ax = self.fig.add_subplot(1,1,1,projection = '3d')
+
+    # Get saved data from known location
+    def load_generated_data(self):
+        import dill, os
+        dir_path = os.path.dirname(os.path.realpath(__file__)) # Get local file path
+        output_path = os.path.join(dir_path, "generated_data") # Add directory generated_data
+        file_path = os.path.join(output_path, "generated_data.p") # Add filename to path
+        self.frames = dill.load(open(file_path, 'rb')) # Write frames to file as pickle
+    
+    # Do a "full analysis" on the data
+    def full_analysis(self):
+        # Parse through all game cars and give names at each index
+        cars = self.frames[0].game_cars
+        for i, car in enumerate(cars):
+            print(str(i) + ": " + str(car.name))
+        
+        while(True): # Wait for user to put in correct input
+            try:
+                index = int(input('Input index of car to plot data for: '))
+                break
+            except Exception as e:
+                print(e)
+                continue
+
+        self.full_plot(index)
+    
+    # Plot the positions on a 3d axis
+    def full_plot(self, index):
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import Axes3D
+        import numpy as np
+        # Extract position data
+        x = []
+        y = []
+        z = []
+        for i, d in enumerate(self.frames):
+            print(self.frames[i].game_cars[index].physics.location)
+            x.append(self.frames[i].game_cars[index].physics.location.x)
+            y.append(self.frames[i].game_cars[index].physics.location.y)
+            z.append(self.frames[i].game_cars[index].physics.location.z)
+
+        Axes3D.plot(self.ax, x, y, z, c='r', marker='o')
+        self.ax.set_xlim3d(-3000, 3000)
+        self.ax.set_ylim3d(-3000, 3000)
+        self.ax.set_zlim3d(0, 2000)
+        self.ax.set_xlabel('X')
+        self.ax.set_ylabel('Y')
+        self.ax.set_zlabel('Z')
+        # self.ax.invert_yaxis()
+        # self.ax.set_ylabel('Position y')
+        # self.ax.set_xlabel('Position x')
+        # self.ax.set_zlabel('Position z')
+        plt.show(block=False) # Show plot
+        import code
+        code.interact(local=locals())
 
 # Generate data from when ball was hit and in/outWindow
 def generate_nn_data_from_hits(am: AnalysisManager, hits: Dict, inWindow: int, outWindow: int):

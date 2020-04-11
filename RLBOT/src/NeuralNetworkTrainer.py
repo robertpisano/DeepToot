@@ -5,7 +5,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, LSTM, Lambda, TimeDistributed, Activation
 
 class LSTM_Model():
-    def __init__(self):
+    def __init__(self, training_data):
         self.model = Sequential()
         # self.model.add(Lambda(lambda x: np.expand_dims(x, axis=-1), input_shape=[None]))
         self.model.add(LSTM(units = 55, input_shape = (10, 55), return_sequences=True))

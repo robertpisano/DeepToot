@@ -16,26 +16,31 @@ from rlbot.utils.game_state_util import BallState
 import sys
 import os
 sys.path.append(os.path.abspath("D:\Documents\DeepToot\RLBOT\src"))
-from NeuralNetworkDataGenerator import NeuralNetworkManager
+from NeuralNetworkDataGenerator import NeuralNetworkManager, DataGeneratorManager
 from ScenarioInterface import ScenarioCreator
 
 class MyBot(BaseAgent):
 
     def initialize_agent(self):
         # This runs once before the bot starts up
-        self.controller_state = SimpleControllerState()
-        self.nn_manager = NeuralNetworkManager()
-        self.sc = ScenarioCreator()
-        self.sc.hardcoded_load()
+        # self.controller_state = SimpleControllerState()
+        # self.nn_manager = NeuralNetworkManager()
+        # self.sc = ScenarioCreator()
+        # self.sc.hardcoded_load()
+        None
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
         # self.c = self.c+1
         # print('counter ' + str(self.c))
         # self.nn_manager.get_control_update(packet)
         # print(len(self.nn_manager.memory.get_memory()))
-        
-        self.sc.control_environment(self)
-        print(self.sc.counter)
+
+        # else:
+        #     self.dataManager.start() # Blocking function
+
+        # self.sc.control_environment(self)
+        # print(self.sc.counter)
+        self.controller_state = SimpleControllerState() # Set controller state to null state
         return self.controller_state
 
 def set_game_state_from_scenario(self):

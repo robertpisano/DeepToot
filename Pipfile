@@ -20,6 +20,7 @@ numpy-stl = "*"
 pyquaternion = "*"
 gekko = "*"
 rel-imp = "*"
+inputs = "*"
 
 [requires]
 python_version = "3.7"

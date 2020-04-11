@@ -11,7 +11,7 @@ from pandas import DataFrame
 import tkinter as tk
 from tkinter import filedialog
 import carball
-from .NeuralNetworkDataGenerator import NeuralNetworkManager
+from NeuralNetworkDataGenerator import NeuralNetworkManager
 from carball.analysis.events.hit_detection.base_hit import BaseHit
 from carball.analysis.utils.proto_manager import ProtobufManager
 from carball.analysis.analysis_manager import AnalysisManager
