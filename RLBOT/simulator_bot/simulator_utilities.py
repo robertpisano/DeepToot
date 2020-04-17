@@ -1,6 +1,6 @@
 # This py file will house classes for the GUI and optimizer/simulator class
 
-
+from rlbot.agents.base_agent import SimpleControllerState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 from tkinter import Tk, filedialog, Toplevel, Frame, Label, Button, StringVar, Entry, Listbox, Text, Scrollbar, Checkbutton, Canvas, PhotoImage, NW
 from util.vec import Vec3
@@ -8,6 +8,7 @@ from threading import Thread
 from AerialOptimization import AerialOptimizer
 from pyquaternion import Quaternion
 import copy
+import numpy as np
 
 class GUI():
     def __init__(self):
@@ -20,6 +21,7 @@ class GUI():
         self.initialize_buttons()
         self.initialize_sim_params_frame()
         self.sim_params_frame.withdraw()
+        self.run_manager = RunManager(SimulationState())
 
 
     # initialize the buttons on the main frame
@@ -29,13 +31,26 @@ class GUI():
 
         self.save_sim_state_button = Button(self.frame, text='save sim state', command=lambda:self.save_sim_state())
         self.save_sim_state_button.pack(fill='both', expand=True)
+
+        self.show_controller_params_button = Button(self.frame, text='Show controller params', command=lambda:self.show_controller_params())
+        self.show_controller_params_button.pack(fill='both', expand=True)
+
+        self.show_utilities_button = Button(self.frame, text='Show utilities', command=lambda:self.show_utilities_frame())
+        self.show_utilities_button.pack(fill='both', expand=True)
+
         self.show_sim_params_button = Button(self.frame, text='show sim params', command=lambda:self.show_sim_params())
         self.show_sim_params_button.pack(fill='both', expand=True)
+
         self.generate_sim_state_button = Button(self.frame, text='generate sim state', command=lambda:self.generate_sim_state())
         self.generate_sim_state_button.pack(fill='both', expand=True)
+
         self.plot_sim_button = Button(self.frame, text='Plot Sim', command=lambda:self.plot_sim())
-        self.plot_sim_button.pack(fill='both', expand=True)    
-    # intialize the sim params frame which  holds the initial conditions of the car and ball
+        self.plot_sim_button.pack(fill='both', expand=True)   
+
+        self.run_sim_button = Button(self.frame, text='Run Sim', command=lambda:self.run_sim())
+        self.run_sim_button.pack(fill='both', expand=True)           
+
+    # intialize the sim params frame which holds the initial conditions of the car and ball
     def initialize_sim_params_frame(self):
         self.sim_params_frame = Toplevel(self.master)
         heading_cells = ['car', 'ball']
@@ -89,6 +104,12 @@ class GUI():
         self.hide_sim_param_button = Button(self.sim_params_frame, text='Hide This Window', command = lambda:self.sim_params_frame.withdraw()) # Hides the sim params window 
         self.hide_sim_param_button.grid(row=row_counter, column=0, columnspan=9, sticky='nsew')
 
+    def initialize_controller_params_frame(self):
+        None
+    
+    def initialize_utilities_frame(self):
+        None
+
     # Export the data in the entry's from sim param frame into the simulation parameters class
     def export_sim_param_frame_data(self):
         #Initialize car state
@@ -134,6 +155,20 @@ class GUI():
     # Function to show the sim parameters window using the show sim params button
     def show_sim_params(self):
         self.sim_params_frame.deiconify()  
+    def show_controller_params(self):
+        self.controller_params_frame.diconify()
+    def show_utilities_frame(self):
+        self.utilities_frame.diconify()
+
+    def run_sim(self):
+        try:
+            #Initialize RunManager
+            self.run_manager = RunManager(self.sim_state)
+
+            # Start run_manager
+            self.run_manager.start = True
+        except Exception as e:
+            print(e)
 
     # Will take the simulation parameters, and run them through the optimzier/simulator
     # Then will generate the full SimulationState that is given to the Agent() class 
@@ -150,6 +185,12 @@ class GUI():
         import copy
         self.current_model = copy.deepcopy(optimizer)
         print('debug')
+
+        # Initialize a controller with a 'feed_back" controller type
+        controller = Controller('feed_back')
+
+        # Initialize SimulationState
+        self.sim_state.default_init(traj, controller)
 
     def plot_sim(self):
         import AerialOptimization
@@ -242,11 +283,20 @@ class SimulationParameters():
 
 # Simulation state will house all the data for a specific scenario, trajectory, initial states of ball/car, the type of controller to use
 class SimulationState():
-    None
+    trajectory = []
+    controller = []
+    
+    def __init__(self):
+        None
+    
+    def default_init(self, traj, cont):
+        self.trajectory = traj
+        self.controller = cont
 
 
 # The full state of the car or ball
 class State():
+    time = []
     position = []
     velocity = []
     orientation = []
@@ -273,6 +323,7 @@ class State():
     # index=0 would be the initial state of the traj etc....
 
     def init_from_model(self, model: AerialOptimizer, index):
+        self.time = model.ts[index]
         for pos in model.position:
             self.position.append(pos[index])
         print(self.position)
@@ -318,6 +369,7 @@ class State():
 # Time vector is also here
 class Trajectory():
     states = []
+    time = []
     # Model is the AerialOptimizer class that has been run.
     def init_from_optimization_model(self, model):
         import copy
@@ -336,8 +388,118 @@ class Trajectory():
         except Exception as e:
             print(e)
     
+# RunManager will 
+class RunManager():
+    start = False # Start flag, so I can get t0 from game, and initialize RL engine
+    running = False # Flat to know if the trajectory is running
+    t_zero = 0.0
+    current_state = State()
+
+    def __init__(self, sim_state):
+        self.sim_state = sim_state
+    
+    def run(self, packet: GameTickPacket, self_index):
+        if(self.start):
+            self.running = True
+            self.t_zero = packet.game_info.seconds_elapsed
+            self.start = False # Reset self.start so we don't trigger this if state ment again
         
+        if(self.running):
+            self.initialize_current_state(packet, self_index)
+            return self.get_controls(self.current_state, self.sim_state.trajectory, self.t_zero)
+
+    def initialize_current_state(self, packet, self_index):
+        None
+        # Initialize current state
+        self.current_state = State()
+        self.current_state.init_from_packet(packet, self_index)
+
+    def get_controls(self, state, trajectory, t_zero):
+        return self.sim_state.controller.algorithm(state, trajectory, t_zero)
 
 class Controller():
-    None
+    algorithm = []
+    kq = []
+    kw = []
+    T_r = 36.07956616966136 # torque coefficient for roll
+    T_p = 12.14599781908070 # torque coefficient for pitch
+    T_y = 8.91962804287785 # torque coefficient for yaw
 
+    # controller_type is a string of the name of the function we want to use for the controller
+    def __init__(self, controller_type):
+        try:
+            hasattr(self, controller_type)
+            self.algorithm = getattr(self, controller_type)
+        except:
+            print('Controller does not have the type queried')
+        
+
+    def feed_back(self, state, trajectory: Trajectory, t0):
+
+        dt = state.time - t0
+
+        for i in range(0, len(trajectory.time) - 1):
+            idx = i
+            if(idx == len(trajectory.time)):
+                break
+            if(dt < trajectory.time[idx+1]):
+                break
+        if(dt > trajectory.time[-1]):
+            None
+            # Trajectory is done, do stuff here?
+
+        # Get the current state in quaternion form
+        current = self.convert_to_quaternion(state)
+        desired = Trajectory.states[idx].orientation
+
+        # Get the error quaternion
+        Qerr = desired * current
+        Qerr = Qerr.unit
+        q = Qerr.imaginary
+        if Qerr.scalar < 0: # If error quaternion has scalar negative, let's flip rotation axis to get shortest path
+            q = -1*q
+        torques = self.kq * q # Get the input torques in each axis
+        controller_state = SimpleControllerState()
+        controller_state.roll = max(min(float(torques.item(0)/self.T_r), 1), -1) 
+        controller_state.pitch = max(min(float(torques.item(1)/self.T_p), 1), -1)
+        controller_state.yaw = max(min(float(torques.item(2)/self.T_y), 1), -1)
+        return SimpleControllerState()
+
+    def feed_forward(self, state, trajectory, t0):
+        return SimpleControllerState()
+
+    def convert_to_quaternion(self, state: State):
+        roll = state.orientation.roll
+        pitch = state.orientation.pitch
+        yaw = state.orientation.yaw
+        # Negate roll and pitch since they use LHR
+        rot_mat = convert_from_euler_angles(-1*roll, -1*pitch, yaw)
+        return Quaternion(matrix=rot_mat).unit
+
+def convert_from_euler_angles(roll, pitch, yaw):
+
+    CR = np.cos(roll)
+    SR = np.sin(roll)
+    CP = np.cos(pitch)
+    SP = np.sin(pitch)
+    CY = np.cos(yaw)
+    SY = np.sin(yaw)
+
+    theta = np.zeros((3,3))
+
+    # front direction
+    theta[0, 0] = CP * CY
+    theta[1, 0] = CP * SY
+    theta[2, 0] = SP; 
+
+    # left direction
+    theta[0, 1] = CY * SP * SR - CR * SY
+    theta[1, 1] = SY * SP * SR + CR * CY
+    theta[2, 1] = -CP * SR; 
+
+    # up direction
+    theta[0, 2] = -CR * CY * SP - SR * SY
+    theta[1, 2] = -CR * SY * SP + SR * CY
+    theta[2, 2] = CP * CR
+
+    return theta
