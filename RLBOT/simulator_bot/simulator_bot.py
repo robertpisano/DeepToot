@@ -2,8 +2,8 @@ from rlbot.agents.base_agent import BaseAgent
 from rlbot.agents.base_agent import SimpleControllerState
 from rlbot.utils.game_state_util import GameState, BallState, CarState, Physics, Vector3, Rotator, GameInfoState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
-from controller_input import controller
-from simulator_utilities import GUI, convert_from_euler_angles
+# from controller_input import controller
+from simulator_utilities import GUI, convert_from_euler_angles, rotation_to_quaternion
 from threading import Thread
 from tkinter import Tk
 import numpy as np
@@ -27,12 +27,12 @@ class Agent(BaseAgent):
 
 
         # print(self.gui.test_val) # Gui updating test
-        # controller_state = self.gui.run_manager.run(game_tick_packet, self.index)
+        controller_state = self.gui.run_manager.run(game_tick_packet, self.index)
 
         # The following code is just retesting my quaternion math as a sanity check before i start writing the class strutures that handle all the math
-        controller_state = controller.get_output()# Get raw controller state from joypad
+        # controller_state = controller.get_output()# Get raw controller state from joypad
 
-        controller_state = self.math_debugging(game_tick_packet)
+        # controller_state = self.math_debugging(game_tick_packet)
 
         return controller_state
 
@@ -66,7 +66,8 @@ class Agent(BaseAgent):
             roll = rotation.roll
             pitch = rotation.pitch
             yaw = rotation.yaw
-
+            todeg = 180/np.pi
+            # print('roll: ' + str(int(roll*todeg)) + ' p: ' + str(int(pitch*todeg)) + ' y: ' + str(int(yaw*todeg)))
             # get orientation matrix
             rot_mat = convert_from_euler_angles(-1*roll, -1*pitch, yaw)
 
@@ -76,19 +77,32 @@ class Agent(BaseAgent):
 
             # define desired quaternion to point towards, get it from gui for ease
             # find the entry names for the quaternion
-            index = self.gui.entry_names.index("car|orientation|i")
-            vals = self.gui.entrys
-            desired = Quaternion([vals[index+3].get(), vals[index].get(), vals[index+1].get(), vals[index+2].get()])
+            # index = self.gui.entry_names.index("car|orientation|i")
+            # vals = self.gui.entrys
+            # desired = Quaternion([vals[index+3].get(), vals[index].get(), vals[index+1].get(), vals[index+2].get()])
+            
+            # Get ultitliteis params from gui for debugging
+            e = self.gui.utilities_entrys
+            ename = self.gui.utilities_entrys_names
+            kq = float(e[ename.index('kq')].get())
+            kw = float(e[ename.index('kw')].get())
+            w = float(e[ename.index('w')].get())
+            i = float(e[ename.index('i')].get())
+            j = float(e[ename.index('j')].get())
+            k = float(e[ename.index('k')].get())
+            desired = Quaternion([w,i,j,k])
 
             # Get all necessary quatenrion and vectors for controller
             current = quat
+            current2 = Quaternion(rotation_to_quaternion(rot_mat))
             desired = desired.unit
             av = packet.game_cars[self.index].physics.angular_velocity
             omega_current = np.array([av.x, av.y, av.z], dtype=np.float64)
             omega_desired = np.array([0,0,0])
+            print('me: ' + str(current) + ' other: ' + str(current2))
 
             # do simple quaternion p control feedback
-            torques = p_quat_control(current, desired, omega_current, omega_desired, 20, 2)
+            torques = p_quat_control(current2, desired, omega_current, omega_desired, kq, kw)
 
             # set controller
             T_r = 36.07956616966136 # torque coefficient for roll
@@ -117,7 +131,7 @@ def p_quat_control(current, desired, wc, wd, kq, kw):
 
     werr = np.array(np.subtract(wd, wc))
     torques = -1*(kq * q) - (kw * werr)
-    print(str(wc) + ' | ' + str(torques) + ' | ' + str(current))
+    # print(str(wc) + ' | ' + str(torques) + ' | ' + str(current))
     return torques
 
 

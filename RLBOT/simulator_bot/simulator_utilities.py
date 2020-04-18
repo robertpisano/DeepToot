@@ -9,6 +9,8 @@ from AerialOptimization import AerialOptimizer
 from pyquaternion import Quaternion
 import copy
 import numpy as np
+import dill
+dill.settings['recurse'] = True
 
 class GUI():
     def __init__(self):
@@ -20,7 +22,10 @@ class GUI():
         self.sim_state = SimulationState()
         self.initialize_buttons()
         self.initialize_sim_params_frame()
+
         self.sim_params_frame.withdraw()
+        self.initialize_utilities_frame()
+        self.utilities_frame.withdraw()
         self.run_manager = RunManager(SimulationState())
 
 
@@ -95,10 +100,10 @@ class GUI():
 
         print(entry_names)
         # Save sim params button
-        self.save_sim_param_button = Button(self.sim_params_frame, text='Save Sim Params', command=lambda:self.save_sim_params(self))
+        self.save_sim_param_button = Button(self.sim_params_frame, text='Save Sim Params', command=lambda:self.save_sim_params())
         self.save_sim_param_button.grid(row=row_counter, column = 0, columnspan=9, sticky='nsew')
         row_counter += 1
-        self.load_sim_param_button = Button(self.sim_params_frame, text='load sim params', command=lambda:self.load_sim_params(self))
+        self.load_sim_param_button = Button(self.sim_params_frame, text='load sim params', command=lambda:self.load_sim_params())
         self.load_sim_param_button.grid(row=row_counter, column=0, columnspan=9, sticky='nsew')
         row_counter += 1
         self.hide_sim_param_button = Button(self.sim_params_frame, text='Hide This Window', command = lambda:self.sim_params_frame.withdraw()) # Hides the sim params window 
@@ -108,7 +113,35 @@ class GUI():
         None
     
     def initialize_utilities_frame(self):
-        None
+        self.utilities_frame = Toplevel(self.master)
+        utilities_entrys_names = []
+        utilities_entrys = []
+        utilities_labels = []
+        label_names = ['w', 'i','j','k','kq', 'kw']
+        row_counter = 0
+        column_counter = 0
+        for j, e in enumerate(label_names): # Make all labels on left side
+            utilities_labels.append(Label(self.utilities_frame, text=e))
+            utilities_labels[-1].grid(row=row_counter, column=column_counter)
+            row_counter += 1
+        column_counter += 1
+        row_counter = 0
+        for j, name in enumerate(label_names):
+            utilities_entrys_names.append(str(name))
+            utilities_entrys.append(Entry(self.utilities_frame))
+            utilities_entrys[-1].grid(row=row_counter, column=column_counter)
+            utilities_entrys[-1].insert(0, '0.0')
+            row_counter += 1
+        self.utilities_entrys = utilities_entrys
+        self.utilities_entrys_names = utilities_entrys_names
+        e = self.utilities_entrys
+        ename = self.utilities_entrys_names
+        e[ename.index('kq')].delete(0, 'end')
+        e[ename.index('kq')].insert(0, '100')
+        e[ename.index('kw')].delete(0, 'end')
+        e[ename.index('kw')].insert(0, '12')
+        e[ename.index('w')].delete(0, 'end')
+        e[ename.index('w')].insert(0, '1')
 
     # Export the data in the entry's from sim param frame into the simulation parameters class
     def export_sim_param_frame_data(self):
@@ -156,9 +189,9 @@ class GUI():
     def show_sim_params(self):
         self.sim_params_frame.deiconify()  
     def show_controller_params(self):
-        self.controller_params_frame.diconify()
+        self.controller_params_frame.deiconify()
     def show_utilities_frame(self):
-        self.utilities_frame.diconify()
+        self.utilities_frame.deiconify()
 
     def run_sim(self):
         try:
@@ -174,7 +207,6 @@ class GUI():
     # Then will generate the full SimulationState that is given to the Agent() class 
     # which will allow the Agent to run the simulation autnomously without needing to interact with the GUI
     def generate_sim_state(self):
-        from AerialOptimization import AerialOptimizer
         print(self.sim_params)
         self.sim_state = SimulationState()
         traj = Trajectory()
@@ -190,7 +222,8 @@ class GUI():
         controller = Controller('feed_back')
 
         # Initialize SimulationState
-        self.sim_state.default_init(traj, controller)
+        from copy import deepcopy as dc
+        self.sim_state.default_init(dc(traj), dc(controller))
 
     def plot_sim(self):
         import AerialOptimization
@@ -228,39 +261,72 @@ class GUI():
             except:
                 continue
 
-    @staticmethod
+
     def load_sim_params(self):
         try:
             import dill
+            import sys
+            sys.path.append('D:\Documents\DeepToot\RLBOT\simulator_bot')
+            setattr(sys.modules["__main__"], "SimulationParameters", type(SimulationParameters()))
             root = Tk()
             save_path = filedialog.askopenfilename(parent=root) # Ask user for file to load from
-            self.sim_params = dill.load(open(save_path, 'rb'))
+            sim_params = dill.load(open(save_path, 'rb'))
+            self.sim_params = sim_params
             root.destroy()
             #TODO: Initialize self.sim_params_frame from the data loaded!
             self.push_sim_params_to_frame(self.sim_params)
-        except:
+        except Exception as e:
+            AerialOptimizer.PrintException()
             root.destroy()
             print('try  loading again')
-    @staticmethod
-    def load_sim_state():
-        None
-    @staticmethod
+
+    def load_sim_state(self):
+        try:
+            import dill
+            import sys
+            sys.path.append('D:\Documents\DeepToot\RLBOT\simulator_bot')
+            root = Tk()
+            save_path = filedialog.askopenfilename(parent=root) # Ask user for file to load from
+            self.sim_state = dill.load(open(save_path, 'rb'))
+            root.destroy()
+        except Exception as e:
+            AerialOptimizer.PrintException()
+            root.destroy()
+            print('try  loading again')
+
     def save_sim_params(self):
         # Save the simulation parameters in the local variable
         try:
+            import sys
+            sys.path.append('D:\Documents\DeepToot\RLBOT\simulator_bot')
             self.export_sim_param_frame_data()
-            import dill
             root = Tk()
+            # self.__name__ = 'simulator_utilities'
             save_path = filedialog.askopenfilename(parent=root) # Ask user to file to save to
-            dill.dump(self.sim_params, open(save_path, 'wb'))
+            print("__name__")
+            print(__name__)
+            print(self.sim_paSrams.__module__)
+            dill.dump(self.sim_params, open(save_path, 'wb'), byref=False)
             root.destroy()
-        except:
+        except:            
+            AerialOptimizer.PrintException()
             print("Try saving again")
             root.destroy()
-    @staticmethod
-    def save_sim_state():
-        import dill
-        None
+
+    def save_sim_state(self):
+        # Save the simulation parameters in the local variable
+        try:
+            import dill
+            import sys
+            sys.path.append('D:\Documents\DeepToot\RLBOT\simulator_bot')
+            root = Tk()
+            save_path = filedialog.askopenfilename(parent=root) # Ask user to file to save to
+            dill.dump(copy.deepcopy(self.sim_state), open(save_path, 'wb'))
+            root.destroy()
+        except:            
+            AerialOptimizer.PrintException()
+            print("Try saving again")
+            root.destroy()
 
 
 # Has all the necessary data to run the AerialOptimizer functions, will be passed into AerialOptimizer.optimize
@@ -343,12 +409,14 @@ class State():
             self.velocity = packet.game_ball.velocity
             self.orientation = packet.game_ball.orientation
             self.ang_vel = packet.game_ball.angular_velocity
+            self.time = packet.game_info.seconds_elapsed
         else:
             self.position = packet.game_cars[index].physics.location
             self.velocity = packet.game_cars[index].physics.velocity
             self.orientation = packet.game_cars[index].physics.rotation # {Pitch, Yaw, Roll}
             self.ang_vel = packet.game_cars[index].physics.angular_velocity
             self.other_data = packet.game_cars[index]
+            self.time = packet.game_info.seconds_elapsed
 
 
     def init_from_raw_data(self, position, velocity, orientation, angular_velocity):
@@ -368,8 +436,9 @@ class State():
 # A class that has an array of states that make up the entire trajectory
 # Time vector is also here
 class Trajectory():
-    states = []
-    time = []
+    def __init__(self):
+        self.states = []
+        self.time = []
     # Model is the AerialOptimizer class that has been run.
     def init_from_optimization_model(self, model):
         import copy
@@ -380,7 +449,7 @@ class Trajectory():
                 s = State()
                 s.__init__()
                 s.init_from_model(model, i)
-                self.states.append(copy.deepcopy(s))
+                self.states.append(s)
             # Check to make sure states and time vector are same length if not throw exception
             if(len(self.time) != len(self.states)):
                 raise ValueError('The time vector and the states vector are not the same length')
@@ -418,9 +487,9 @@ class RunManager():
         return self.sim_state.controller.algorithm(state, trajectory, t_zero)
 
 class Controller():
-    algorithm = []
-    kq = []
-    kw = []
+    algorithm = None
+    kq = 100
+    kw = 12
     T_r = 36.07956616966136 # torque coefficient for roll
     T_p = 12.14599781908070 # torque coefficient for pitch
     T_y = 8.91962804287785 # torque coefficient for yaw
@@ -434,23 +503,26 @@ class Controller():
             print('Controller does not have the type queried')
         
 
-    def feed_back(self, state, trajectory: Trajectory, t0):
+    def feed_back(self, state, traj, t0):
+        print(state.time)
+        print(t0)
+        dt = float(state.time) - t0
 
-        dt = state.time - t0
-
-        for i in range(0, len(trajectory.time) - 1):
+        for i in range(0, len(traj.time) - 1):
             idx = i
-            if(idx == len(trajectory.time)):
+            if(idx == len(traj.time)):
                 break
-            if(dt < trajectory.time[idx+1]):
+            if(dt < traj.time[idx+1]):
                 break
-        if(dt > trajectory.time[-1]):
-            None
+        if(dt > traj.time[-1]):
+            return SimpleControllerState()
             # Trajectory is done, do stuff here?
+
+        print('idx' + str(idx))
 
         # Get the current state in quaternion form
         current = self.convert_to_quaternion(state)
-        desired = Trajectory.states[idx].orientation
+        desired = traj.states[idx].orientation
 
         # Get the error quaternion
         Qerr = desired * current
@@ -474,7 +546,7 @@ class Controller():
         yaw = state.orientation.yaw
         # Negate roll and pitch since they use LHR
         rot_mat = convert_from_euler_angles(-1*roll, -1*pitch, yaw)
-        return Quaternion(matrix=rot_mat).unit
+        return Quaternion(rotation_to_quaternion(rot_mat)).unit
 
 def convert_from_euler_angles(roll, pitch, yaw):
 
@@ -503,3 +575,45 @@ def convert_from_euler_angles(roll, pitch, yaw):
     theta[2, 2] = CP * CR
 
     return theta
+
+def rotation_to_quaternion(m):
+    trace = np.trace(m)
+
+    q = [0,0,0,0]
+
+    if (trace > 0.0):
+        s = np.sqrt(trace + 1.0)
+        q[0] = s * 0.5
+        s = 0.5/ s
+        q[1] = (m[2, 1] - m[1, 2]) * s
+        q[2] = (m[0, 2] - m[2, 0]) * s
+        q[3] = (m[1, 0] - m[0, 1]) * s
+
+    else:
+        if (m[0, 0] >= m[1, 1] and m[0, 0] >= m[2, 2]):
+            s = np.sqrt(1.0 + m[0, 0] - m[1, 1] - m[2, 2])
+            invS = 0.5 / s
+            q[1] = 0.5 * s
+            q[2] = (m[1, 0] + m[0, 1]) * invS
+            q[3] = (m[2, 0] + m[0, 2]) * invS
+            q[0] = (m[2, 1] - m[1, 2]) * invS
+
+        elif (m[1, 1] > m[2, 2]):
+            s = np.sqrt(1.0 + m[1, 1] - m[0, 0] - m[2, 2])
+            invS = 0.5 / s
+            q[1] = (m[0, 1] + m[1, 0]) * invS
+            q[2] = 0.5 * s
+            q[3] = (m[1, 2] + m[2, 1]) * invS
+            q[0] = (m[0, 2] - m[2, 0]) * invS
+
+        else:
+            s = np.sqrt(1.0 + m[2, 2] - m[0, 0] - m[1, 1])
+            invS = 0.5 / s
+            q[1] = (m[0, 2] + m[2, 0]) * invS
+            q[2] = (m[1, 2] + m[2, 1]) * invS
+            q[3] = 0.5 * s
+            q[0] = (m[1, 0] - m[0, 1]) * invS
+
+
+
+    return q
