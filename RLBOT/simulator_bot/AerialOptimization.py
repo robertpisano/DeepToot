@@ -90,8 +90,8 @@ class AerialOptimizer():
         for qi in self.q_omega:
             # qi.value = 0
             # qi.STATUS = 1
-            qi.upper = 5.5
-            qi.lower = -5.5
+            qi.upper = 1
+            qi.lower = -1
             # qi.DCOST = 1e-5
         # self.q_omega[0].status = 0# Shut off scalar part of omega quaternion
         self.omega_mag = self.d.Var() # Magnitude of angular velocity
@@ -143,16 +143,16 @@ class AerialOptimizer():
             # NOTE: Important note, in gui i have entrys as ijkw, the math uses the wijk order
             # That is why q[0] = car.orientation[3]
             self.q = self.d.Array(self.d.Var, 4) #orientation quaternion
-            self.q[0].value = car.orientation[3]
-            self.q[1].value = car.orientation[0]
-            self.q[2].value = car.orientation[1]
-            self.q[3].value = car.orientation[2]
+            self.q[0].value = car.orientation[0]
+            self.q[1].value = car.orientation[1]
+            self.q[2].value = car.orientation[2]
+            self.q[3].value = car.orientation[3]
 
             self.q_norm = [None, None, None, None] # Initialize q_norm
-            self.q_norm[0] = self.d.Var(value = car.orientation[3]) #Intermediate(equation = self.q[0]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
-            self.q_norm[1] = self.d.Var(value = car.orientation[0]) #Intermediate(equation = self.q[1]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
-            self.q_norm[2] = self.d.Var(value = car.orientation[1]) #Intermediate(equation = self.q[2]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
-            self.q_norm[3] = self.d.Var(value = car.orientation[2]) #Intermediate(equation = self.q[3]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
+            self.q_norm[0] = self.d.Var(value = car.orientation[0]) #Intermediate(equation = self.q[0]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
+            self.q_norm[1] = self.d.Var(value = car.orientation[1]) #Intermediate(equation = self.q[1]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
+            self.q_norm[2] = self.d.Var(value = car.orientation[2]) #Intermediate(equation = self.q[2]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
+            self.q_norm[3] = self.d.Var(value = car.orientation[3]) #Intermediate(equation = self.q[3]/self.d.sqrt((self.q[0]**2 + self.q[1]**2 + self.q[2]**2 + self.q[3]**2)))
 
 
             # self.q_omega[0].value = 0
@@ -464,11 +464,12 @@ if __name__ == "__main__":
         v_tf = [0.00, 0.0, 500]
         # Get starting orientation quaternion
         ux = np.array([1, 0, 0]) # Unit x vector
-        di = np.array([1,0,-0.5]) # Starting vector to point towards
+        di = np.array([1,0,0]) # Starting vector to point towards
         di = di/(np.linalg.norm(di)) # Make di a unit vector
         q_xyz = np.cross(ux, di)
         q_w = np.sqrt((np.linalg.norm(ux) ** 2) * (np.linalg.norm(di) ** 2)) + np.dot(ux, di)
-        r_ti = Quaternion(scalar = q_w, vector = q_xyz)
+        r_ti = Quaternion([1,0,0,1])
+        # r_ti = Quaternion(scalar = q_w, vector = q_xyz)
         r_ti = r_ti.normalised
 
         # Get final orientatiaon quaternion
@@ -509,7 +510,7 @@ if __name__ == "__main__":
 
         # Comment out this line if you don't want see the animation.
         plt.show()
-
+        print('debug')
     except BaseException as e:
         AerialOptimizer.PrintException()
         # a, t_star = opt.optimize2D(s_ti, s_tf, v_ti, v_tf, r_ti, r_tf, omega_ti)
