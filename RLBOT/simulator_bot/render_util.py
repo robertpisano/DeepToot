@@ -46,12 +46,16 @@ def render_desired_quaternion_vector(bot, packet, traj):
     origin = [0,0,0]
     ux = np.array([300,0,0])
     colors = [b.red(), b.blue(), b.orange(), b.green(), b.grey(), b.pink(), b.purple(), b.white(), b.cyan()]
+
     for i, s in enumerate(traj.states):
         ux_prime = s.orientation.unit.rotate(ux)
+
         # ux_prime[1] *= -1
         try:
             bot.renderer.draw_line_3d(pos, pos+ux_prime, colors[i])
         except:
+            from AerialOptimization import AerialOptimizer as ao
+            ao.PrintException()
             bot.renderer.draw_line_3d(pos, pos+ux_prime, colors[-1])
     
 def render_math_check_vector(bot, packet):
@@ -97,10 +101,7 @@ class CoordinateRender():
             array = np.array(b)
             self.base_vectors_quat.append(quat.rotate(b))
             mat = np.dot(rot_mat, array)
-            print('mat')
-            print(mat)
             try:
-                print(mat[0, 1])
                 self.base_vectors_rot.append(np.array([mat[0,0], mat[0,1], mat[0, 2]]))
             except:
                 self.base_vectors_rot.append(np.array([mat[0], mat[1], mat[2]]))

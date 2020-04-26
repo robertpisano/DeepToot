@@ -10,6 +10,7 @@ from pyquaternion import Quaternion
 import copy
 import numpy as np
 import dill
+import sys
 # dill.settings['recurse'] = True
 
 class GUI():
@@ -222,8 +223,7 @@ class GUI():
         controller = Controller('feed_back')
 
         # Initialize SimulationState
-        from copy import deepcopy as dc
-        self.sim_state.default_init(dc(traj), dc(controller), self.current_model)
+        self.sim_state.default_init(traj, controller, self.current_model)
         self.run_manager = RunManager(self.sim_state)
 
     def plot_sim(self):
@@ -265,10 +265,6 @@ class GUI():
 
     def load_sim_params(self):
         try:
-            import sys
-            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
-            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
-            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
             sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
             root = Tk()
             save_path = filedialog.askopenfilename(parent=root) # Ask user for file to load from
@@ -285,10 +281,6 @@ class GUI():
     def save_sim_params(self):
         # Save the simulation parameters in the local variable
         try:
-            import sys
-            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
-            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
-            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
             sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
             self.export_sim_param_frame_data()
             root = Tk()
@@ -302,12 +294,11 @@ class GUI():
 
     def load_sim_state(self):
         try:
-            import dill
-            import sys
-            sys.path.append('D:\Documents\DeepToot\RLBOT\simulator_utilities')
+            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
             root = Tk()
             save_path = filedialog.askopenfilename(parent=root) # Ask user for file to load from
             self.sim_state = dill.load(open(save_path, 'rb'))
+            self.current_model = self.sim_state.optimizer
             root.destroy()
         except Exception as e:
             AerialOptimizer.PrintException()
@@ -318,9 +309,7 @@ class GUI():
     def save_sim_state(self):
         # Save the simulation parameters in the local variable
         try:
-            import dill
-            import sys
-            sys.path.append('D:\Documents\DeepToot\RLBOT\simulator_utilities')
+            sys.path.append('D:/Documents/DeepToot/RLBOT/simulator_bot')
             root = Tk()
             save_path = filedialog.askopenfilename(parent=root) # Ask user to file to save to
             dill.dump(copy.deepcopy(self.sim_state), open(save_path, 'wb'))
@@ -410,10 +399,10 @@ class State():
 
     def init_from_packet(self, packet, index):
         if index == 'ball':
-            self.position = packet.game_ball.location
-            self.velocity = packet.game_ball.velocity
-            self.euler = packet.game_ball.orientation
-            self.ang_vel = packet.game_ball.angular_velocity
+            self.position = packet.game_ball.physics.location
+            self.velocity = packet.game_ball.physics.velocity
+            self.euler = None
+            self.ang_vel = packet.game_ball.physics.angular_velocity
             self.time = packet.game_info.seconds_elapsed
         else:
             self.position = packet.game_cars[index].physics.location
@@ -423,14 +412,15 @@ class State():
             self.other_data = packet.game_cars[index]
             self.time = packet.game_info.seconds_elapsed
             # Get data from packet about rotation
-            rotation = packet.game_cars[index].physics.rotation
-            roll = rotation.roll
-            pitch = rotation.pitch
-            yaw = rotation.yaw
+            # rotation = packet.game_cars[index].physics.rotation
+            # roll = rotation.roll
+            # pitch = rotation.pitch
+            # yaw = rotation.yaw
             # rot_mat = convert_from_euler_angles(-1*roll, -1*pitch, yaw)
-            rot_mat, _ = euler_to_rotation_to_quaternion(self)
+            rot_mat, _ = euler_to_right_handed_rotation_and_quaternion(self)
+            # rot_mat = convert_from_euler_angles(self)
             # get quaternion
-            self.orientation = Quaternion(matrix=rot_mat)
+            self.orientation = Quaternion(matrix=rot_mat).unit
             # self.orientation = Quaternion([1,0,0,0])
 
 
@@ -514,8 +504,8 @@ class Controller():
         except:
             print('Controller does not have the type queried')
 
-        self.kq = 100
-        self.kw = 12
+        self.kq = 100.0
+        self.kw = 12.0
         self.T_r = 36.07956616966136 # torque coefficient for roll
         self.T_p = 12.14599781908070 # torque coefficient for pitch
         self.T_y = 8.91962804287785 # torque coefficient for yaw
@@ -541,17 +531,79 @@ class Controller():
             # Get the current state in quaternion form
             current = state.orientation.unit
             desired = traj.states[idx].orientation.unit
+            # desired = Quaternion([1,0,1,0]).unit
 
             Qerr = desired*current
             Qerr = Qerr.unit
-            q = Qerr.imaginary
+            q = Qerr.imaginary # [w, x, y, z] w + xi + yj + zk
 
             if Qerr.scalar < 0:
                 q = -1*q
 
             wd = np.array([0,0,0]) # desired angular velocity
             w = state.ang_vel # ang vel non numpy form
-            wc = np.array([w.x, w.y, w.z], dtype=np.float) # ang_vel numpy form
+            wc = np.array([w.x, w.y, w.z], dtype=np.float64) # ang_vel numpy form
+
+            # Convert omega_current to car coordinate system, we need to use the inverse of the state quaternion since we're going from world to car
+            wx = current.inverse.rotate(np.array([wc[0], 0, 0]))
+            wy = current.inverse.rotate(np.array([0, wc[1], 0]))
+            wz = current.inverse.rotate(np.array([0, 0, -1*wc[2]])) # Remember to negate yaw since yaw rotation is backwards in RL
+            wcur = wx + wy + wz
+
+            werr = np.array(np.subtract(wd, wcur))
+            torques = -1*(self.kq * q) - (self.kw * werr)
+            controller_state = SimpleControllerState()
+            controller_state.roll = max(min(float(torques.item(0)/self.T_r), 1), -1) 
+            controller_state.pitch = max(min(float(torques.item(1)/self.T_p), 1), -1)
+            controller_state.yaw = max(min(float(torques.item(2)/self.T_y), 1), -1)
+            # print('torques: ' + str(torques))
+            # print('ang_vel: ' + str(wc))
+            # print('idx' + str(idx))
+            # print('desired: ' + str(desired) + ' current: ' + str(current))
+            return controller_state
+        except:
+            AerialOptimizer.PrintException()
+            print('whats the error?')
+            print('will it update')
+            return SimpleControllerState()
+
+    def stupid(self, state, traj, t0):
+        try:
+            dt = float(state.time) - t0
+
+            for i in range(0, len(traj.time) - 1):
+                idx = i
+                if(idx == len(traj.time)):
+                    break
+                if(dt < traj.time[idx+1]):
+                    break
+                if(dt > traj.time[-1]):
+                    print('trajectory is finished')
+                    return 'finished'
+                    # Trajectory is done, do stuff here?
+            current = state.orientation
+            desired = traj.states[idx].orientation
+            w = state.ang_vel
+            wc = np.array([w.x, w.y, w.z])
+            wd = np.array([0,0,0])
+            torques = self.state_feed_back(current, desired, wc, wd)
+            controller_state = SimpleControllerState()
+            controller_state.roll = max(min(float(torques.item(0)/self.T_r), 1), -1) 
+            controller_state.pitch = max(min(float(torques.item(1)/self.T_p), 1), -1)
+            controller_state.yaw = max(min(float(torques.item(2)/self.T_y), 1), -1)
+            return controller_state
+        except:
+            AerialOptimizer.PrintException()
+
+
+    def state_feed_back(self, current, desired, wc, wd):
+        try:
+            Qerr = desired*current
+            Qerr = Qerr.unit
+            q = Qerr.imaginary
+
+            if Qerr.scalar < 0:
+                q = -1*q
 
             # Convert omega_current to car coordinate system, we need to use the inverse of the state quaternion since we're going from world to car
             wx = current.inverse.rotate(np.array([wc[0], 0, 0]))
@@ -560,7 +612,7 @@ class Controller():
             wc = wx + wy + wz
 
             werr = np.array(np.subtract(wd, wc))
-            torques = -1*(self.kq * q) + (self.kw * werr)
+            torques = -1*(self.kq * q) - (self.kw * werr)
             controller_state = SimpleControllerState()
             controller_state.roll = max(min(float(torques.item(0)/self.T_r), 1), -1) 
             controller_state.pitch = max(min(float(torques.item(1)/self.T_p), 1), -1)
@@ -568,13 +620,13 @@ class Controller():
             # print('torques: ' + str(torques))
             # print('ang_vel: ' + str(wc))
             # print('idx' + str(idx))
-            print('desired: ' + str(desired) + ' current: ' + str(current))
-            return controller_state
+            # print('desired: ' + str(desired) + ' current: ' + str(current))
+            return torques
         except:
             AerialOptimizer.PrintException()
             print('whats the error?')
             print('will it update')
-            return SimpleControllerState()
+            return np.array([0,0,0])      
 
     def feed_forward(self, state, trajectory, t0):
         return SimpleControllerState()
@@ -663,13 +715,26 @@ def rotation_to_quaternion(m):
 
     return q
 
-def euler_to_rotation_to_quaternion(state: State()):
-    r = -1*state.euler.roll #rotation around roll axis to get car to world frame
-    p = -1*state.euler.pitch #rotation around pitch axis to get car to world frame
+def euler_to_right_handed_rotation_and_quaternion(state: State()):
+    r = state.euler.roll #rotation around roll axis to get car to world frame
+    p = state.euler.pitch #rotation around pitch axis to get car to world frame
     y = state.euler.yaw #rotation about the world z axis to get the car to the world frame
     Rx = np.matrix([[1, 0, 0], [0, np.cos(r), -1*np.sin(r)], [0, np.sin(r), np.cos(r)]])
     Ry = np.matrix([[np.cos(p), 0, np.sin(p)], [0, 1, 0], [-1*np.sin(p), 0, np.cos(p)]])
     Rz = np.matrix([[np.cos(y), -1*np.sin(y), 0], [np.sin(y), np.cos(y), 0], [0, 0, 1]])
+    #Order of rotations from car to world is z then y then x
+    Rinter = np.matmul(Rz, Ry)
+    Rcar_to_world = np.matmul(Rinter, Rx)
+
+    return Rcar_to_world, Quaternion(matrix=Rcar_to_world)
+
+def euler_to_left_handed_rotation_and_quaternion(state: State()):
+    r = -1*state.euler.roll #rotation around roll axis to get car to world frame
+    p = -1*state.euler.pitch #rotation around pitch axis to get car to world frame
+    y = state.euler.yaw #rotation about the world z axis to get the car to the world frame
+    Rx = np.matrix([[1, 0, 0], [0, np.cos(r), np.sin(r)], [0, -1*np.sin(r), np.cos(r)]])
+    Ry = np.matrix([[np.cos(p), 0, -1*np.sin(p)], [0, 1, 0], [np.sin(p), 0, np.cos(p)]])
+    Rz = np.matrix([[np.cos(y), np.sin(y), 0], [-1*np.sin(y), np.cos(y), 0], [0, 0, 1]])
     #Order of rotations from car to world is z then y then x
     Rinter = np.matmul(Rz, Ry)
     Rcar_to_world = np.matmul(Rinter, Rx)
