@@ -1,6 +1,6 @@
 from rlbot.agents.base_agent import BaseAgent
 from controller_input import controller
-from NeuralNetworkDataGenerator import NeuralNetworkManager, DataGeneratorManager
+from .RLBOT.srcNeuralNetworkDataGenerator import NeuralNetworkManager, DataGeneratorManager
 
 class Agent(BaseAgent):
     def initialize_agent(self):

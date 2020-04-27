@@ -188,5 +188,3 @@ class BallChasingInteractor():
             file_path = "{0}\\{1}".format(directory, file_name)
             print("download successful, writing to file {}".format(file_path))
             self._write_replay_to_file(response, file_path)
-
-BallChasingInteractor().download_all()
