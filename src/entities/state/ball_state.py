@@ -1,5 +1,5 @@
-from RLBOT.src.entities.base_state import BaseState
-from RLBOT.src.entities.base_state import BaseStateBuilder
+from DeepToot.src.entities.state.base_state import BaseState
+from DeepToot.src.entities.state.base_state import BaseStateBuilder
 
 
 class BallState(BaseState):

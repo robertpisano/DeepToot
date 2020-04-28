@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-class BallChasingInteractor():
+class ReplayGenerator():
     SECONDS_IN_MINUTE = 60
     CALLS_PER_MINUTE = 2
     AUTHORIZATION = "LNyeFi2IH57vXF7xq8TBvlWy9GPkA7fi7X28D4OG"

@@ -1,6 +1,6 @@
-from RLBOT.src.entities.base_state import BaseState
-from RLBOT.src.entities.base_state import BaseStateBuilder
-from rlbot.src.entities.physics.base_3d_vector import Base3DVector
+from DeepToot.src.entities.state.base_state import BaseState
+from DeepToot.src.entities.state.base_state import BaseStateBuilder
+from DeepToot.src.entities.physics.base_3d_vector import Base3DVector
 
 class CarState(BaseState):
     def __init(self, position, velocity, orientation, ang_vel, time, hit_box, is_demolished, has_wheel_contact, is_super_sonic, has_jumped, has_double_jumped, boost_amount):
