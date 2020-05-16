@@ -2,24 +2,23 @@
 print('workeds')
 import sys
 print(sys.argv)
-
+from DeepToot.src.data_generation.replay_transformer import ReplayTransformer
+import DeepToot.src.data_generation.NeuralNetworkDataGenerator as nndg
+from DeepToot.src.data_generation.NeuralNetworkDataGenerator import DataAnalyzer
 #Commands for CLI
 
 try:
     # Download .replay files
     if sys.argv[1] == 'download':
-        from RLBOT.src.GameData import BallChasingInteractor
-        BallChasingInteractor().download_all()
+        ReplayTransformer().download_all()
 
     # Convert .replay --> rawdataframes and save
-    if sys.argv[1] == 'convert':
-        from RLBOT.src.ParserLibrary import ReplayConverter
-        rc = ReplayConverter()
+    if sys.argv[1] == 'convert':        
+        rc = ReplayTransformer()
         rc.convert_and_save_replays() 
 
     # Find training data by using hits, takes two args inputlength and outputlength
     if sys.argv[1] == 'generate_basic':
-        import RLBOT.src.NeuralNetworkDataGenerator as nndg
         try:
             input_length = int(sys.argv[2]) # First argument passed in is input length for LSTM
             output_length = int(sys.argv[3]) # Second argument passed is output length for LSTM
@@ -40,7 +39,6 @@ try:
     # Plot generated_data
     if sys.argv[1] == 'plot':
         try:
-            from RLBOT.src.NeuralNetworkDataGenerator import DataAnalyzer
             analyzer = DataAnalyzer()
             analyzer.full_analysis()
         except Exception as e:

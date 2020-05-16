@@ -339,7 +339,7 @@ def generate_inputs_from_first_hit(am: AnalysisManager, hits: Dict, inWindow: in
     outBatch.append_window(fw2)
 
 def generate_nn_data_from_saved_data_frames(inWindow: int, outWindow: int):
-    from RLBOT.src.hitFinder import RawReplayData
+    from DeepToot.src.hitFinder import RawReplayData
     file_path = filedialog.askdirectory() #Ask for directory of pickled files
     replays_path = []
     for r in os.listdir(file_path):
