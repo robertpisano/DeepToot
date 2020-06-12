@@ -3,50 +3,47 @@ import math
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 
-from util.orientation import Orientation
-from util.vec import Vec3
+# from rlbot.utils.game_state_util import GameState
+# from rlbot.utils.game_state_util import CarState
+# from rlbot.utils.game_state_util import Physics
+# from rlbot.utils.game_state_util import Vector3
+# from rlbot.utils.game_state_util import Rotator
+# from rlbot.utils.game_state_util import BallState
 
-from rlbot.utils.game_state_util import GameState
-from rlbot.utils.game_state_util import CarState
-from rlbot.utils.game_state_util import Physics
-from rlbot.utils.game_state_util import Vector3
-from rlbot.utils.game_state_util import Rotator
-from rlbot.utils.game_state_util import BallState
+from DeepToot.src.entities.physics.game_trajectory import GameTrajectory
+from DeepToot.src.data_generation.game_trajectory_builder import GameTrajectoryBuilder
+from DeepToot.src.data_generation.state_transformer import StateTransformer
 
-import sys
-import os
-sys.path.append(os.path.abspath("D:\Documents\DeepToot\RLBOT\src"))
-from NeuralNetworkDataGenerator import NeuralNetworkManager, DataGeneratorManager
-from ScenarioInterface import ScenarioCreator
 
 class MyBot(BaseAgent):
+    game_trajectory_builder = None
 
     def initialize_agent(self):
-        None
+        self.game_trajectory_builder = GameTrajectoryBuilder(10)
+        self.opp_index = self.get_opponent_index()
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
+        self.game_trajectory_builder.add_game_state(ball_state = StateTransformer.from_game_tick_packet_to_ball_state(packet=packet),
+                                                    bot_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.index),
+                                                    opp_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.opp_index))
 
+        
+        game_trajectory = self.game_trajectory_builder.build()
         self.controller_state = SimpleControllerState() # Set controller state to null state
+        print(game_trajectory.BOT_TRAJECTORY.states[-1])
         return self.controller_state
 
-def find_correction(current: Vec3, ideal: Vec3) -> float:
-    # Finds the angle from current to ideal vector in the xy-plane. Angle will be between -pi and +pi.
+    def get_opponent_index(self):
+        """ONLY WORKS FOR 1V1
+            based off of bots index, assume opponents index is the opposite between 0 and 1
 
-    # The in-game axes are left handed, so use -x
-    current_in_radians = math.atan2(current.y, -current.x)
-    ideal_in_radians = math.atan2(ideal.y, -ideal.x)
-
-    diff = ideal_in_radians - current_in_radians
-
-    # Make sure that diff is between -pi and +pi.
-    if abs(diff) > math.pi:
-        if diff < 0:
-            diff += 2 * math.pi
+        Returns:
+            [type]: [description]
+        """    
+        if(self.index == 0):
+            return 1
         else:
-            diff -= 2 * math.pi
-
-    return diff
-
+            return 0
 
 def draw_debug(renderer, car, ball, action_display):
     renderer.begin_rendering()
@@ -55,3 +52,6 @@ def draw_debug(renderer, car, ball, action_display):
     # print the action that the bot is taking
     renderer.draw_string_3d(car.physics.location, 2, 2, action_display, renderer.white())
     renderer.end_rendering()
+
+if __name__ == "__main__":
+    None

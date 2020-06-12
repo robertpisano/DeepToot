@@ -1,4 +1,5 @@
 from DeepToot.src.entities.physics.trajectory import Trajectory
+#this is what gets fed into the lstm neural net
 class GameTrajectory():
     OPPONENT_TRAJECTORY = None
     BOT_TRAJECTORY = None

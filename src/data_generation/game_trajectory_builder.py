@@ -5,7 +5,7 @@ from DeepToot.src.entities.physics.trajectory import Trajectory
 from DeepToot.src.entities.physics.game_trajectory import GameTrajectory
 from DeepToot.src.entities.exceptions.build_failed_exception import BuildFailedException
 
-class GameTrajctoryBuilder():
+class GameTrajectoryBuilder():
     ball_queue = []
     bot_queue = []
     opp_queue = []
@@ -93,6 +93,6 @@ class GameTrajctoryBuilder():
 
 # Run testing code here
 if __name__ == "__main__":
-    t = GameTrajctoryBuilder(20)
+    t = GameTrajectoryBuilder(20)
     t.add_ball_state(BallState(0,0,0,0,0))
 

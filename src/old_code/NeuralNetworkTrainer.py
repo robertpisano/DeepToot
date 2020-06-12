@@ -13,11 +13,12 @@ class LSTM_Model():
         # self.model.add(TimeDistributed(Dense(55)))
         # self.model.add(Activation('linear'))
         self.model.add(Lambda(lambda x: x[:, -5:, :]))
-        self.model.compile(loss="mse", optimizer=keras.optimizers.SGD(lr=1e-5, momentum=0.9),metrics=["mse"])
+        self.model.compile(loss="mse", optimizer=keras.optimizers.SGD(lr=1e-5, momentum=0.9), metrics=["mse"])
 
     def train(self, indata, outdata):
-        history = self.model.fit(indata, outdata, epochs=50)     
+        history = self.model.fit(indata, outdata, epochs=50)
         print(history)
+        
 if __name__ == "__main__":
     nn = LSTM_Model()
     # Print layer in/out shapes
@@ -30,4 +31,43 @@ if __name__ == "__main__":
     # print(datain.shape)
     # print(' dataout ')
     # print(dataout.shape )
-    nn.train(datain, dataout)
+
+# pseudo code about the neural network data 
+# 
+#     try:
+#         nn.train(datain, dataout)
+#         prediction = nn.model.predict(indata)
+#     except:
+#         print("HURDUR")
+
+
+# NoBoostDataShape
+#     shape_type = "NoBoost"
+
+#     input_shape = {}
+#     output_shape = {}
+
+#     input = []
+#     output= []
+
+
+# NoBoostNeuralNetDataTransformer
+    
+
+# application.new(
+#     data=BallChasingData
+#     data_type="ballChasingDataType"
+#     network_shape="no_boost"
+# )
+#     TrajectoryTransformerFactory.create(data_type)
+#     shape = NetworkShapeFactory.create(network_shape)
+#     input_transformer = NetworkTransformerFactory.create(network_shape)
+# ,
+
+# NetworkShapeFactory.create(network_shape)
+#     if(network_shape == "NoBoost"):
+#         return NoBoostDataShape
+#     elif (network_shape == "suckMyDick"):
+#         return SuckMyDickDataShape
+
+# application.train()
