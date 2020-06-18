@@ -9,14 +9,14 @@
 
 from DeepToot.src.entities.exceptions.implementation_exception import ImplementationException
 from DeepToot.src.entities.physics.game_trajectory import GameTrajectory
-from DeepToot.src.entities.neural_net_base_objects.base_neural_net_architecture import NeuralNetArch
+from DeepToot.src.entities.neural_net_base_objects.base_neural_net_architecture import BaseNeuralNetArch
 
 class BaseNeuralNetTransformer():
     def __init__(self, game_trajectory:GameTrajectory, neural_net_arch: NeuralNetArch):
         self.game_trajectory = game_trajectory
         self.neural_net_arch = neural_net_arch
 
-    def from_game_trajectrory_to_?(self):
+    def from_game_trajectrory_to_numpy_array(self, game_trajectory: GameTrajectory):
         """
         Returns:
             Matrix of the shape self.neural_net_arch.input_shape, output_shape
