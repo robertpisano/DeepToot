@@ -32,7 +32,7 @@ class GameTrajectoryBuilder():
         """        
         self.bot_queue = self._add_state_to_queue(state, self.bot_queue)
         
-    def add_opponent_state(self, state: CarState):
+    def add_opp_state(self, state: CarState):
         """add opponent state to queue
             trims queue if > MAX_QUEUE_LENGTH
             
@@ -41,17 +41,17 @@ class GameTrajectoryBuilder():
         """        
         self.opp_queue = self._add_state_to_queue(state, self.opp_queue)
 
-    def add_game_state(self, ball_state: BallState, bot_state: CarState, opponent_state: CarState):
+    def add_game_state(self, ball_state: BallState, bot_state: CarState, opp_state: CarState):
         """add all states to respective queues
 
         Args:
             ball_state (BallState): [description]
             bot_state (CarState): [description]
-            opponent_state (CarState): [description]
+            opp_state (CarState): [description]
         """        
         self.add_ball_state(ball_state)
         self.add_bot_state(bot_state)
-        self.add_opponent_state(opponent_state)
+        self.add_opp_state(opp_state)
 
     def build(self):
         """build a GameTrajectory
@@ -59,17 +59,17 @@ class GameTrajectoryBuilder():
         Args:
             length (int): injected length from neural network architecture
         """        
-        if((len(ball_queue) == len(bot_queue)) and (len(bot_queue) == len(opp_queue))):
-            ball_trajectory = Trajectory(self.ball_queue[-1*length:])
-            bot_trajectory = Trajectory(self.bot_queue[-1*length:])
-            opp_trajectory = Trajectory(self.opp_queue[-1*length:])
-
+        if((len(self.ball_queue) == len(self.bot_queue)) and (len(self.bot_queue) == len(self.opp_queue))):
+            ball_trajectory = Trajectory(state_array = self.ball_queue)
+            bot_trajectory = Trajectory(state_array = self.bot_queue)
+            opp_trajectory = Trajectory(state_array = self.opp_queue)
+            print(bot_trajectory.states)
         else: 
             raise BuildFailedException
         
         return GameTrajectory(ball_trajectory = ball_trajectory, 
-                    bot_trajectory = bot_trajectory, 
-                    opp_trajectory = opp_trajectory)
+                                bot_trajectory = bot_trajectory, 
+                                opp_trajectory = opp_trajectory)
 
     def _add_state_to_queue(self, state: BaseState, queue: list):
         """adds an injected state into the injected queue
@@ -84,7 +84,7 @@ class GameTrajectoryBuilder():
             [list]: the newly modified queue
         """        
         if(len(queue) == 0): 
-           [state] * self.MAX_QUEUE_LENGTH # create a queue filled with initial state
+           queue = [state] * self.MAX_QUEUE_LENGTH # create a queue filled with initial state
         else:
             queue.append(state)
         if(len(queue) > self.MAX_QUEUE_LENGTH): queue.pop(0) # remove first element from list

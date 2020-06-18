@@ -3,7 +3,7 @@ from DeepToot.src.entities.state.base_state import BaseStateBuilder
 from DeepToot.src.entities.physics.base_3d_vector import Base3DVector
 
 class CarState(BaseState):
-    def __init(self, position, velocity, orientation, ang_vel, time, hit_box, is_demolished, has_wheel_contact, is_super_sonic, has_jumped, has_double_jumped, boost_amount):
+    def __init__(self, position, velocity, orientation, ang_vel, time, hit_box, is_demolished, has_wheel_contact, is_super_sonic, has_jumped, has_double_jumped, boost_amount):
         super().__init__(position=position,
                         velocity=velocity,
                         orientation=orientation,

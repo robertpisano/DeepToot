@@ -6,6 +6,6 @@ class GameTrajectory():
     BALL_TRAJECTORY = None
 
     def __init__(self, opp_trajectory:Trajectory, bot_trajectory:Trajectory, ball_trajectory:Trajectory):
-        OPPONENT_TRAJECTORY = opp_trajectory
-        BOT_TRAJECTORY = bot_trajectory
-        BALL_TRAJECTORY = ball_trajectory
+        self.OPPONENT_TRAJECTORY = opp_trajectory
+        self.BOT_TRAJECTORY = bot_trajectory
+        self.BALL_TRAJECTORY = ball_trajectory
