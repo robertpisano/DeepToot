@@ -1,0 +1,52 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+
+[packages]
+numpy = "*"
+rlbot = "*"
+glob3 = "*"
+carball = "*"
+matplotlib = "*"
+dill = "*"
+keras = "*"
+prettyprint = "*"
+termcolor = "*"
+pyquaternion = "*"
+gekko = "*"
+rel-imp = "*"
+inputs = "*"
+cd = "*"
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+[requires]
+python_version = "3.7"
+
+[scripts]
+[requires]
+python_version = "3.7"
+
+[scripts]
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+toot = "python toot.py"
