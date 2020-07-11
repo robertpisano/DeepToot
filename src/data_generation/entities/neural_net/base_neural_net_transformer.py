@@ -9,17 +9,17 @@
 
 from DeepToot.src.data_generation.entities.exceptions.implementation_exception import ImplementationException
 from DeepToot.src.data_generation.entities.physics.game_trajectory import GameTrajectory
-from DeepToot.src.data_generation.entities.neural_net_base_objects.base_neural_net_arch import BaseNeuralNetArch
+from DeepToot.src.data_generation.entities.neural_net.base_neural_net_model import BaseNeuralNetModel
 
 class BaseNeuralNetTransformer():
-    def __init__(self, game_trajectory:GameTrajectory, neural_net_arch: BaseNeuralNetArch):
+    def __init__(self, game_trajectory:GameTrajectory, neural_net_model: BaseNeuralNetModel):
         self.game_trajectory = game_trajectory
-        self.neural_net_arch = neural_net_arch
+        self.neural_net_model = neural_net_model
 
     def from_game_trajectrory_to_numpy_array(self, game_trajectory: GameTrajectory):
         """
         Returns:
-            Matrix of the shape self.neural_net_arch.input_shape, output_shape
+            Matrix of the shape self.neural_net_model.input_shape, output_shape
 
         Raises:
             ImplementationException: [description]

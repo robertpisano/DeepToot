@@ -6,11 +6,20 @@
 # NB: as of right now we will have a one to one mapping with a strategy and as such an arch will similarly need a factory which produces a concrete arch based on the strategy
     # - however, we possibly forsee the need to switch out different archs for the same strategy, which will call for an abstract factory, to produce a specific arch based
     # - off of a strategy and an unforseen second parameter 
-
-    
+from keras import Model
 from DeepToot.src.data_generation.entities.exceptions.implementation_exception import ImplementationException
 
-class BaseNeuralNetArch():
+class BaseNeuralNetModel(Model):
+    def call(self, inputs):
+        """ the forward pass of the network https://keras.io/api/models/model/#model-class
+        Args:
+            inputs ([type]): [description]
+
+        Raises:
+            ImplementationException: [description]
+        """        
+        raise ImplementationException("You must implement your own call method")
+
     def input_shape(self):
         """
         Returns:

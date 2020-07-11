@@ -1,14 +1,33 @@
 
-from DeepToot.src.data_generation.entities.neural_net_base_objects.base_neural_net_arch import BaseNeuralNetArch 
-from keras.activations import sigmoid, relu
+from DeepToot.src.data_generation.entities.neural_net.base_neural_net_model import BaseNeuralNetModel
+
+from keras.activations import sigmoid, relu, tanh
 from keras.layers import Dense
 from keras.losses import MeanAbsoluteError
 from keras.optimizers import SGD
 
-class ControllerStateNeuralNetArch():
+from keras.models import Sequential
+from keras.activations import tanh
+from keras.engine.input_layer import InputLayer
+from keras.layers import Dense, BatchNormalization, Dropout, Activation
+from keras.losses import MeanAbsoluteError
+from keras.optimizers import SGD
+
+class ControllerStateNeuralNetModel(BaseNeuralNetModel):
     def __init__(self, trajectory_length:int):
         self.trajectory_length = trajectory_length
-        
+        super(BaseNeuralNetModel, self).__init__()
+
+        self.batch_normalization = BatchNormalization()
+        self.layer_1 = Dense(self.input_shape(), activation=self.activation_function())
+        self.layer_2 = Dense(self.output_shape())
+        self.compile(optimizer = self.optimizer(), loss = self.loss_function(), metrics=['accuracy', 'mse'])
+
+    def call(self, input):
+        x = self.batch_normalization(input)
+        x = self.layer_1(x)
+        return self.layer_2(x)
+
     def input_shape(self):
         """
         Returns:
@@ -30,21 +49,14 @@ class ControllerStateNeuralNetArch():
                 integer -- the size of the single hidden layer
                 
         """        
-        return 10
-
-    def type(self):
-        """
-        Returns:
-            layer type -- the type of neural network style (LSTM, CONVOLUTIONAL, DENSE)
-        """                 
-        return Dense
+        return 300
 
     def activation_function(self):
         """
         Returns:
             keras activation function type -- tanh (hyperbolic tangent)
         """    
-        return relu
+        return sigmoid
         
     def loss_function(self):
         """
