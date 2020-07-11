@@ -63,7 +63,6 @@ class GameTrajectoryBuilder():
             ball_trajectory = Trajectory(state_array = self.ball_queue)
             bot_trajectory = Trajectory(state_array = self.bot_queue)
             opp_trajectory = Trajectory(state_array = self.opp_queue)
-            print(bot_trajectory.states)
         else: 
             raise BuildFailedException
         

@@ -26,12 +26,9 @@ class MyBot(BaseAgent):
         self.game_trajectory_builder.add_game_state(ball_state = StateTransformer.from_game_tick_packet_to_ball_state(packet=packet),
                                                     bot_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.index),
                                                     opp_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.opp_index))
-
-        
         game_trajectory = self.game_trajectory_builder.build()
         self.controller_state = SimpleControllerState() # Set controller state to null state
-        print(game_trajectory.BOT_TRAJECTORY.states[-1])
-        return self.controller_state
+        return controller_state
 
     def get_opponent_index(self):
         """ONLY WORKS FOR 1V1
