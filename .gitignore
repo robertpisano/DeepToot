@@ -2,3 +2,4 @@ rocket-league-replays/
 .vscode
 __pycache__/
 RLBOT/rlbot.cfg
+SavedModels/
