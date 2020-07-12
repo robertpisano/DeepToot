@@ -1,5 +1,7 @@
 from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
 import numpy as np
+import tensorflow as tf
+import keras
 from DeepToot.src.repositories.neural_net_model_repository import NeuralNetModelRepository
 from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_model import ControllerStateNeuralNetModel
 
@@ -65,20 +67,35 @@ if __name__ == "__main__":
     print("about to fit the data")
     print(indata.T)
     print(outdata.T)
+
     simp.fit(indata.T, outdata.T, epochs=1000, batch_size=100)
     print("was actually able to fit the model....")
-    NeuralNetModelRepository(model = simp).save()
-
+    print("model layers")
+    print(simp.layers)
+    repository = NeuralNetModelRepository(model = simp)
+    repository.save()
+    print("serializeddd")
+    print(tf.__version__)
+    loaded_model = repository.load()
+    print("loaded model")
+    print(loaded_model)
+    print(loaded_model.layers)
+    print(simp.layers)
+    print(loaded_model.optimizer)     
+    print(simp.optimizer)
     t1 = trajectories[3][5]
     t2 = trajectories[3][6]
     u_model = controls_list[3][5]
     intest = np.array([t1, t2], dtype=np.float)
     intest = np.expand_dims(intest, axis=1)
     nnout = simp.predict(intest.T)
+    nn_loaded_out = loaded_model.predict(intest.T)
 
     print('t1: ' + str(t1))
     print('t2: ' + str(t2))
     print('nnout: ' + str(nnout))
+    print('nnout2: ' + str(nn_loaded_out))
     print('math model out: '  + str(u_model))
+
     # print(u)
     # print(trajectories)

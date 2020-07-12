@@ -28,6 +28,9 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
         x = self.layer_1(x)
         return self.layer_2(x)
 
+    def get_config(self):
+        return {"trajectory_length": self.trajectory_length }
+
     def input_shape(self):
         """
         Returns:
