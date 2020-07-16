@@ -3,27 +3,29 @@ import numpy as np
 from numpy import array
 from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_model import ControllerStateNeuralNetModel
 from DeepToot.src.data_generation.entities.physics.game_trajectory import GameTrajectory
-from keras.models import Sequential
-from keras.activations import tanh
-from keras import Input
-from keras.layers import Dense, BatchNormalization, Dropout, Activation
-from keras.losses import MeanAbsoluteError
-from keras.optimizers import SGD
+from  keras.models import Sequential
+from  keras.activations import tanh
+from  keras import Input
+from  keras.layers import Dense, BatchNormalization, Dropout, Activation
+from  keras.losses import MeanAbsoluteError
+from  keras.optimizers import SGD
 from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_transformer import ControllerStateNeuralNetTransformer
+from DeepToot.src.repositories.neural_net_model_repository import NeuralNetModelRepository
 
 class SimpleControllerStateGenerator():
     model = Sequential()
     
-    def __init__(self, length):#game_trajectory:GameTrajectory):
+    def __init__(self, length: int):#game_trajectory:GameTrajectory):
         """[summary]
 
         Args:
             game_trajectory (GameTrajectory): [description]
         """        
-        self.model = ControllerStateNeuralNetModel(trajectory_length=length) #game_trajectory.length) 
+        self.model_repository = NeuralNetModelRepository(model=ControllerStateNeuralNetModel(trajectory_length=length)) #game_trajectory.length) 
+        self.model = self.model_repository.load()
 
 
-    def generate_controller_state(self):
+    def generate_controller_state(self, game_trajectory: GameTrajectory):
         """[summary]
 
         Args:
@@ -32,9 +34,11 @@ class SimpleControllerStateGenerator():
         Returns:
             SimpleControllerState: the predicted controller inputs for motion
         """        
-        numpy_game_trajectory = ControllerStateNeuralNetTransformer.from_game_trajectory_to_numpy(game_trajectory = self.game_trajectory, arch = self.model)
+        numpy_game_trajectory = ControllerStateNeuralNetTransformer.from_game_trajectory_to_numpy_array(game_trajectory = game_trajectory, model = self.model)
+        print(numpy_game_trajectory)
         output = self.model.predict(numpy_game_trajectory)
 
+        print("generateed output" + str(output))
         return SimpleControllerState(steer = 0.0,
                                     throttle = output,
                                     pitch = 0.0,

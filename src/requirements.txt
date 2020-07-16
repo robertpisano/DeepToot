@@ -1,0 +1,12 @@
+numpy
+rlbot
+glob3
+matplotlib
+dill
+keras
+prettyprint
+termcolor
+pyquaternion
+gekko
+rel-imp
+inputs
