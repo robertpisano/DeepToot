@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import DeepToot
 
+
 class Agent(BaseAgent):
 
 
@@ -15,6 +16,7 @@ class Agent(BaseAgent):
         # self.nn_manager = NeuralNetworkManager()
         # self.sc = ScenarioCreator()
         # self.sc.hardcoded_load()
+
         col = ["time", "location_x", "location_y", "location_z",
             "velocity_x", "velocity_y", "velocity_z", 
             "rotation_roll", "rotation_pitch", "rotation_yaw", 
@@ -23,7 +25,6 @@ class Agent(BaseAgent):
             "ping_flag"]
         self.dataframe = pd.DataFrame([], columns = col)
         self.ping_flag = 0
-
 
 
     def get_output(self, game_tick_packet):
@@ -56,6 +57,7 @@ class Agent(BaseAgent):
             data_path = os.path.dirname(DeepToot.__file__) + "\SavedData\stupid.csv"
             self.dataframe.to_csv(data_path)
             print("saved_training_data_betch")
+
 
         return controller_output
     
