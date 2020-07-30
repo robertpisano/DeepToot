@@ -71,6 +71,10 @@ class ControllerInput:
     def aerial_control(self):
         return self._tr
 
+    @property
+    def save_data(self):
+        return self._thumb_r
+
     def get_output(self):
         output = SimpleControllerState()
 
@@ -82,6 +86,8 @@ class ControllerInput:
         output.jump = self.jump
         output.boost = self.boost
         output.handbrake = self.handbrake
+        output.save_data = self.save_data
+        
 
         return output
 
@@ -89,7 +95,7 @@ class ControllerInput:
         while 1:
             events = get_gamepad()  # Blocking
             for event in events:
-                #print(repr((event.ev_type, event.code, event.state)))
+                # print(repr((event.ev_type, event.code, event.state)))
                 if False: pass
                 elif event.ev_type=='Absolute' and event.code=='ABS_RZ': self._gas_pedal = deadzone(event.state / 255.0)
                 elif event.ev_type=='Absolute' and event.code=='ABS_Z': self._brake_pedal = deadzone(event.state / 255.0)

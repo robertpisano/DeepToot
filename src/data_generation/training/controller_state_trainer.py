@@ -1,9 +1,15 @@
-from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
+# from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
 import numpy as np
-import tensorflow as tf
-import keras
-from DeepToot.src.repositories.neural_net_model_repository import NeuralNetModelRepository
-from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_model import ControllerStateNeuralNetModel
+# import tensorflow as tf
+# import keras
+import pandas as pd
+import os
+import DeepToot
+from DeepToot.src.data_generation.game_trajectory_builder import GameTrajectoryBuilder
+from DeepToot.src.data_generation.state_transformer import StateTransformer
+from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
+# from DeepToot.src.repositories.neural_net_model_repository import NeuralNetModelRepository
+# from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_model import ControllerStateNeuralNetModel
 
 class ControllerStateTrainer:
     None
@@ -14,6 +20,54 @@ class ControllerStateTrainer:
     #     for y in velocity
 
 if __name__ == "__main__":
+    data_path = os.path.dirname(DeepToot.__file__) + "\SavedData\stupid.csv"
+    dataframe = pd.read_csv(data_path)
+
+    #Define numpy arrays with proper dimensions
+    in_data = np.array([], ndmin = 3) #Time and State
+    out_data = np.array([], ndmin = 2) # Controller
+    states = []
+    controller_states = []
+
+    #init game trajectory builder
+    gtb = GameTrajectoryBuilder(len(dataframe.index))
+
+    #Make array of all states from dataframe
+    for index in range(2, len(dataframe.index)):
+        df_buff = dataframe.iloc[index]
+        # print(df_buff)
+        state = StateTransformer.from_pandas_frame_to_car_state(df_buff)
+        gtb.add_bot_state(state)
+    gtb.zero_fill_unneeded_queues()
+    gtb.build() #BUild trajectory
+
+    #Make array of all controller states
+    for index in range(0, len(dataframe.index)-2):
+        df_buff = dataframe.iloc[index]
+        control_state = SimpleControllerStateGenerator.from_data_frame(df_buff)
+        controller_states.append(control_state)
+
+    # Create Numpy Arrays
+    # NB: each batch should have two states in them, dimensionality is (batch size, state n, state n+1)
+    for i, state in enumerate(gtb.bot_queue):
+        if i == 0:
+            in_data = np.array([i,[state.time, state.position.x, state.position.y, state.velocity.x, state.velocity.y, state.ang_vel.z], ['put future state here']], ndmin=3)
+        else:
+            in_data = np.append(in_data, np.array([i,[state.time, state.position.x, state.position.y, state.velocity.x, state.velocity.y, state.ang_vel.z], ['put future state here']], ndmin=3), axis=0)
+
+
+
+
+
+    print('some bs')
+
+
+
+
+
+
+
+
     amax = 900 #maximum acceleration
     controls = np.linspace(-1, 1, 21) #controls vector
 
