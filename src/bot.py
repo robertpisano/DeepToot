@@ -13,22 +13,25 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket
 from DeepToot.src.data_generation.entities.physics.game_trajectory import GameTrajectory
 from DeepToot.src.data_generation.game_trajectory_builder import GameTrajectoryBuilder
 from DeepToot.src.data_generation.state_transformer import StateTransformer
+from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
 
 
 class MyBot(BaseAgent):
     game_trajectory_builder = None
+    TRAJECTORY_LENGTH = 11
 
     def initialize_agent(self):
-        self.game_trajectory_builder = GameTrajectoryBuilder(10)
+        self.game_trajectory_builder = GameTrajectoryBuilder(length=self.TRAJECTORY_LENGTH)
         self.opp_index = self.get_opponent_index()
+        self.simple_controller_state_generator = SimpleControllerStateGenerator(length=self.TRAJECTORY_LENGTH)
 
     def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
         self.game_trajectory_builder.add_game_state(ball_state = StateTransformer.from_game_tick_packet_to_ball_state(packet=packet),
                                                     bot_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.index),
                                                     opp_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.opp_index))
         game_trajectory = self.game_trajectory_builder.build()
-        self.controller_state = SimpleControllerState() # Set controller state to null state
-        return controller_state
+        self.controller_state = self.simple_controller_state_generator.generate_controller_state(game_trajectory=game_trajectory) # Set controller state to null state
+        return self.controller_state
 
     def get_opponent_index(self):
         """ONLY WORKS FOR 1V1
