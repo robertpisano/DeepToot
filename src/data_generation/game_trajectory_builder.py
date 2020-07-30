@@ -10,6 +10,7 @@ class GameTrajectoryBuilder():
     bot_queue = []
     opp_queue = []
     MAX_QUEUE_LENGTH = 0
+    are_unneeded_queues_zero_filled = False
 
     def __init__(self, length: int):
         self.MAX_QUEUE_LENGTH = length
@@ -53,18 +54,21 @@ class GameTrajectoryBuilder():
         self.add_bot_state(bot_state)
         self.add_opp_state(opp_state)
 
+    def zero_fill_unneeded_queues(self):
+        self.are_unneeded_queues_zero_filled = True
+
     def build(self):
         """build a GameTrajectory
 
         Args:
             length (int): injected length from neural network arch
         """        
-        if((len(self.ball_queue) == len(self.bot_queue)) and (len(self.bot_queue) == len(self.opp_queue))):
+        if((len(self.ball_queue) == len(self.bot_queue)) and (len(self.bot_queue) == len(self.opp_queue)) or self.are_unneeded_queues_zero_filled):
             ball_trajectory = Trajectory(state_array = self.ball_queue)
             bot_trajectory = Trajectory(state_array = self.bot_queue)
             opp_trajectory = Trajectory(state_array = self.opp_queue)
         else: 
-            raise BuildFailedException
+            raise BuildFailedException("Could not build a trajectory because the queue lengths are not the same")
         
         return GameTrajectory(ball_trajectory = ball_trajectory, 
                                 bot_trajectory = bot_trajectory, 

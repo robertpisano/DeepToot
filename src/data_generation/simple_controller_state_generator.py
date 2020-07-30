@@ -11,6 +11,7 @@ from  keras.losses import MeanAbsoluteError
 from  keras.optimizers import SGD
 from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_transformer import ControllerStateNeuralNetTransformer
 from DeepToot.src.repositories.neural_net_model_repository import NeuralNetModelRepository
+import pandas as pd
 
 class SimpleControllerStateGenerator():
     model = Sequential()
@@ -46,5 +47,17 @@ class SimpleControllerStateGenerator():
                                     roll = 0.0,
                                     jump = False,
                                     boost = False,
+                                    handbrake = False,
+                                    use_item = False)
+
+    @staticmethod
+    def from_data_frame(df: pd.DataFrame):
+        return SimpleControllerState(steer = df.loc['controller_steer'],
+                                    throttle = df.loc['controller_throttle'],
+                                    pitch = 0.0,
+                                    yaw = 0.0,
+                                    roll = 0.0,
+                                    jump = False,
+                                    boost = df.loc['controller_boost'],
                                     handbrake = False,
                                     use_item = False)
