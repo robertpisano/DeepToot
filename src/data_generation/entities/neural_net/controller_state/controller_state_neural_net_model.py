@@ -36,7 +36,7 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
         Returns:
             int -- the size of the input vector (remember this is a 1D vector)
         """
-        return (2*self.trajectory_length)
+        return (6*self.trajectory_length)
 
     def output_shape(self):
         """
@@ -44,7 +44,7 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
             integer -- the size of the output vector (remember this is a 1D vector)
             
         """ 
-        return 1
+        return 3
 
     def shape(self):
         """
@@ -52,7 +52,7 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
                 integer -- the size of the single hidden layer
                 
         """        
-        return 300
+        return 500
 
     def activation_function(self):
         """
@@ -73,7 +73,7 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
         Returns:
             keras.optimizer -- SGD (stochastic gradient descent, learing rate / momentum parameters probably need tuning)
         """        
-        return SGD(learning_rate=0.01, 
-                    momentum=0.01, 
+        return SGD(learning_rate=0.03, 
+                    momentum=0.0, 
                     nesterov=False, 
                     name="SGD")
