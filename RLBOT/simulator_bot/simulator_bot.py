@@ -38,6 +38,8 @@ class Agent(BaseAgent):
         if self.gui.run_manager.running == False:
             controller_state = self.math_debugging(game_tick_packet)
             # _ = render_util.sanity_checking(self, game_tick_packet)
+        else:
+            print_trajectory(self.gui.sim_state.trajectory)
         return controller_state
 
     def gui_loop(self):
@@ -117,7 +119,11 @@ class Agent(BaseAgent):
             c = Controller('state_feed_back') # Initialize controller class to be of type state based feedback
             c.kq = kq  # Force update controller gains
             c.kw = kw  # Force update controller gains
-            torques = c.algorithm(s.orientation, desired, omega_current, omega_desired)
+                        # Create quaternion from rigid body tick
+            qq = self.get_rigid_body_tick().players[self.index].state.rotation
+            current_quat = Quaternion(w = qq.w, x=qq.x, y=qq.y, z=qq.z)
+
+            torques = c.algorithm(current_quat, desired, omega_current, omega_desired)
 
             # set controller
             T_r = 36.07956616966136 # torque coefficient for roll
@@ -129,17 +135,43 @@ class Agent(BaseAgent):
             controller_state.yaw = max(min(float(torques.item(2)/T_y), 1), -1)
 
             # Print stuff
-            # Print rotated ux vector by quaternion
-            vecx = s.orientation.inverse.rotate([1,0,0])
-            vecy = s.orientation.rotate([0,1,0])
-            vecz = s.orientation.rotate([0,0,1])
-            print('vecx: ' + str(vecx) + ' vecy: ' + str(vecy) + ' vecz: ' + str(vecz))
+            q = self.get_rigid_body_tick().players[self.index].state.rotation
+            p = [q.w, q.x, q.y, q.z]
+            for elem in p:
+                print(" | ", end="")
+                print(elem, end="")
+            print()
+            # print(desired.inverse*current_quat)
+            # print_rot_mat(s.rot_mat)
+            # print_orientation_from_quaternion(s.orientation)
             # print('roll: ' + str(int(roll*todeg)) + ' p: ' + str(int(pitch*todeg)) + ' y: ' + str(int(yaw*todeg)))
             # print('angT_vel:' + str(omega_current))
             # print('me: ' + str(current) + ' other: ' + str(current2))
             # return controller
             return controller_state
 
+def print_trajectory(t: Trajectory):
+    print('----------------------------')
+    for state in t.states:
+        print(state.orientation)
+    print('----------------------------')
+
+def print_orientation_from_quaternion(q):
+    vecx = q.inverse.rotate([1,0,0])
+    vecy = q.inverse.rotate([0,1,0])
+    vecz = q.inverse.rotate([0,0,1])
+    print('vecx: ' + str(vecx) + ' vecy: ' + str(vecy) + ' vecz: ' + str(vecz))
+
+def print_rot_mat(r):
+    x = r[0, :]
+    y = r[1,:]
+    z = r[2,:]
+    vec = [x,y,z]
+    for v in vec:
+        print(" | ", end=" ")
+        for elem in np.nditer(v):
+            print(round(float(elem), 2), end=" ")
+    print()
 
 def p_quat_control(current, desired, wc, wd, kq, kw):
     Qerr = desired * current

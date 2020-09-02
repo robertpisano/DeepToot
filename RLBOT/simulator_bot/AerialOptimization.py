@@ -75,6 +75,7 @@ class AerialOptimizer():
         # Acceleration variable
         self.a = self.d.MV(lb = 0, ub = 1)
         self.a.STATUS = 1
+        self.d.free(self.a)
         # self.a.DCOST = 1e-8
 
         # Torque input <Tx, Ty, Tz>, will change the q_omega[1:3] values since q_omega[0] is always zero in pure quaternion form
@@ -85,6 +86,7 @@ class AerialOptimizer():
             i.upper = 1
             i.lower = -1
             i.DCOST = 0
+            self.d.free(i)
         # Angular Velocity input (testing for now, maybe is quicker than a torque input)
         self.q_omega = self.d.Array(self.d.Var, 4) # w, x, y, z for quaternion
         for qi in self.q_omega:
@@ -114,7 +116,7 @@ class AerialOptimizer():
         self.D_p = self.d.Param(value = -2.798194258050845) # drag coefficient for pitch
         self.D_y = self.d.Param(value = -1.886491900437232) # drag coefficient for yaw
         self.amax = self.d.Param(value = 991.666+60)
-
+        self.vmax = self.d.Param(value = 2300)
         # integral over time for u_pitch^2
         # self.u2_pitch = self.d.Var(value=0)
         # self.d.Equation(self.u2.dt() == 0.5*self.u_pitch**2)
@@ -180,7 +182,7 @@ class AerialOptimizer():
             print('h:', h)
 
 
-            # # self.v_mag = self.d.Var(value = vi, ub = 2300, lb =0)
+            self.v_mag = self.d.Var()
             self.vx = self.d.Var(value=car.velocity[0]) #x velocity
             self.vy = self.d.Var(value=car.velocity[1]) #y velocity
             self.vz = self.d.Var(value=car.velocity[2])
@@ -222,6 +224,9 @@ class AerialOptimizer():
             self.d.Equation(self.heading[0] == (self.hi[0]*-1*self.q_norm[1]) + (self.hi[1]*self.q_norm[0]) + (self.hi[2]*-1*self.q_norm[3]) - (self.hi[3]*-1*self.q_norm[2]))
             self.d.Equation(self.heading[1] == (self.hi[0]*-1*self.q_norm[2]) - (self.hi[1]*-1*self.q_norm[3]) + (self.hi[2]*self.q_norm[0]) + (self.hi[3]*-1*self.q_norm[1]))
             self.d.Equation(self.heading[2] == (self.hi[0]*-1*self.q_norm[3]) + (self.hi[1]*-1*self.q_norm[2]) - (self.hi[2]*-1*self.q_norm[1]) + (self.hi[3]*self.q_norm[0]))
+
+            self.d.Equation(self.v_mag == self.d.sqrt((self.vx)**2 + (self.vy)**2 + (self.vz)**2))
+            self.d.Equation(self.v_mag <= 2300)
 
             self.d.Equation(self.vx.dt() == self.tf * self.amax * self.a * self.heading[0])
             self.d.Equation(self.vy.dt()== self.tf * self.amax * self.a * self.heading[1])
@@ -458,8 +463,8 @@ if __name__ == "__main__":
         opt3 = AerialOptimizer()
 
     # First Trajectory
-        s_ti = [-2500.0, 3000.0, 150]
-        v_ti = [500, -500, 200]
+        s_ti = [0, 0, 1000]
+        v_ti = [0, 0, 300]
         s_tf = [0.0, 0.0, 1000]
         v_tf = [0.00, 0.0, 500]
         # Get starting orientation quaternion
@@ -468,7 +473,7 @@ if __name__ == "__main__":
         di = di/(np.linalg.norm(di)) # Make di a unit vector
         q_xyz = np.cross(ux, di)
         q_w = np.sqrt((np.linalg.norm(ux) ** 2) * (np.linalg.norm(di) ** 2)) + np.dot(ux, di)
-        r_ti = Quaternion([1,0,0,1])
+        r_ti = Quaternion([1,0,0,0])
         # r_ti = Quaternion(scalar = q_w, vector = q_xyz)
         r_ti = r_ti.normalised
 
@@ -489,13 +494,13 @@ if __name__ == "__main__":
         ball = State()
         quat = [r_ti.real, r_ti.imaginary[0], r_ti.imaginary[1], r_ti.imaginary[2]]
         car.init_from_raw_data(s_ti, v_ti, r_ti, omega_ti)  
-        ball.init_from_raw_data([3000, -3000, 100], [-1500, 1500, 1500], [0,0,0,0], [0,0,0,0])
+        ball.init_from_raw_data([3000, 3000, 100], [-500, -500, 1500], [0,0,0,0], [0,0,0,0])
         sim_params = SimulationParameters()
         sim_params.initialize_from_raw(car, ball)
 
 
         # opt.COLDSTART = 1
-        opt.LINEAR = 0
+        # opt.LINEAR = 0
         opt.optimizeAerial(sim_params)
         a, t_star = opt.solve()
 
@@ -518,3 +523,4 @@ if __name__ == "__main__":
         # plotAttitude(1, opt)
     plt.ioff()
     plt.show()
+    print('debug')

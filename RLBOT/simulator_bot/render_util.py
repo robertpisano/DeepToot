@@ -48,7 +48,7 @@ def render_desired_quaternion_vector(bot, packet, traj):
     colors = [b.red(), b.blue(), b.orange(), b.green(), b.grey(), b.pink(), b.purple(), b.white(), b.cyan()]
 
     for i, s in enumerate(traj.states):
-        ux_prime = s.orientation.unit.rotate(ux)
+        ux_prime = s.orientation.unit.inverse.rotate(ux)
 
         # ux_prime[1] *= -1
         try:

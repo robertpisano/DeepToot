@@ -417,10 +417,10 @@ class State():
             # pitch = rotation.pitch
             # yaw = rotation.yaw
             # rot_mat = convert_from_euler_angles(-1*roll, -1*pitch, yaw)
-            rot_mat, _ = euler_to_right_handed_rotation_and_quaternion(self)
+            self.rot_mat, _ = euler_to_right_handed_rotation_and_quaternion(self)
             # rot_mat = convert_from_euler_angles(self)
             # get quaternion
-            self.orientation = Quaternion(matrix=rot_mat).unit
+            self.orientation = Quaternion(matrix=self.rot_mat).unit
             # self.orientation = Quaternion([1,0,0,0])
 
 
@@ -434,6 +434,12 @@ class State():
             self.orientation = Quaternion(w=orientation[3], x=orientation[0], y=orientation[1], z=orientation[2]) # gui vector order is ijkw, quaternion order is wijk
             print('orientation input arguemnt is NOT a Quaternion object')
         # self.quaternion
+        self.ang_vel = angular_velocity
+    
+    def init_from_raw_data_euler(self, position, velocity, euler, angular_velocity):
+        self.position = position
+        self.velocity = velocity
+        self.euler = euler
         self.ang_vel = angular_velocity
 
 
@@ -530,7 +536,11 @@ class Controller():
 
             # Get the current state in quaternion form
             current = state.orientation.unit
+
+            # Fix quaternion by negate x, y
             desired = traj.states[idx].orientation.unit
+            desired[1] = -1*desired[1]
+            desired[2] = -1*desired[2]
             # desired = Quaternion([1,0,1,0]).unit
 
             Qerr = desired*current
@@ -598,7 +608,8 @@ class Controller():
 
     def state_feed_back(self, current, desired, wc, wd):
         try:
-            Qerr = desired*current
+
+            Qerr = desired.inverse*current
             Qerr = Qerr.unit
             q = Qerr.imaginary
 
