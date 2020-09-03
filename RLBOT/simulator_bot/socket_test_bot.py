@@ -1,7 +1,7 @@
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
-import DeepToot.RLBOT.simulator_bot.socket_types
+import DeepToot.RLBOT.simulator_bot.GUI_development.socket_types
 import os
-from DeepToot.RLBOT.simulator_bot.server import ICPThread
+from DeepToot.RLBOT.simulator_bot.GUI_development.server import ICPThread
 
 class SocketTestBot(BaseAgent):
 
