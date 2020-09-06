@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1242</width>
-    <height>896</height>
+    <width>1357</width>
+    <height>686</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,9 +17,9 @@
    <widget class="QGroupBox" name="GameStateParametersGroup">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>660</y>
-      <width>811</width>
+      <x>830</x>
+      <y>0</y>
+      <width>491</width>
       <height>201</height>
      </rect>
     </property>
@@ -66,8 +66,8 @@
    <widget class="QPushButton" name="pushButton_execute">
     <property name="geometry">
      <rect>
-      <x>740</x>
-      <y>1020</y>
+      <x>1180</x>
+      <y>610</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -230,10 +230,10 @@
    <widget class="QGroupBox" name="groupBox_debuggingOptions">
     <property name="geometry">
      <rect>
-      <x>390</x>
-      <y>870</y>
+      <x>830</x>
+      <y>440</y>
       <width>341</width>
-      <height>211</height>
+      <height>201</height>
      </rect>
     </property>
     <property name="title">
@@ -243,7 +243,7 @@
      <property name="geometry">
       <rect>
        <x>240</x>
-       <y>180</y>
+       <y>170</y>
        <width>91</width>
        <height>23</height>
       </rect>
@@ -286,8 +286,8 @@
    <widget class="QGroupBox" name="groupBox_plottingOptions">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>870</y>
+      <x>830</x>
+      <y>220</y>
       <width>341</width>
       <height>211</height>
      </rect>
@@ -569,7 +569,7 @@
        <rect>
         <x>0</x>
         <y>20</y>
-        <width>241</width>
+        <width>231</width>
         <height>161</height>
        </rect>
       </property>
@@ -582,7 +582,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1242</width>
+     <width>1357</width>
      <height>21</height>
     </rect>
    </property>
