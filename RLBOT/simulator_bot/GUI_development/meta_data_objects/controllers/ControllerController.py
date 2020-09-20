@@ -9,6 +9,7 @@ class ControllerController:
     """    
     drivingController: DrivingController
     aerialController: AerialController
+    activatedController: Controller
 
     def __init__(self, drivingControllerType, aerialControllerType):
         drivingController = drivingControllerType

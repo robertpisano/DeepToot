@@ -19,7 +19,7 @@ class Agent(BaseAgent):
 
         col = ["time", "location_x", "location_y", "location_z",
             "velocity_x", "velocity_y", "velocity_z", 
-            "rotation_roll", "rotation_pitch", "rotation_yaw", 
+            "quaternion_w", "quaternion_x", "quaternion_y", "quaternion_z",
             "angular_velocity_x", "angular_velocity_y", "angular_velocity_z",
             "controller_throttle", "controller_steer", "controller_boost",
             "ping_flag"]
@@ -37,9 +37,11 @@ class Agent(BaseAgent):
         else:
             self.ping_flag = 0
 
+        quat = self.get_rigid_body_tick().players[self.index].state.rotation
+
         data = [game_tick_packet.game_info.seconds_elapsed, p.location.x, p.location.y, p.location.z, 
                 p.velocity.x, p.velocity.y, p.velocity.z, 
-                p.rotation.roll, p.rotation.pitch, p.rotation.yaw, 
+                quat.w, quat.x, quat.y, quat.z,
                 p.angular_velocity.x, p.angular_velocity.y, p.angular_velocity.z,
                 controller_output.throttle, controller_output.steer, controller_output.boost, 
                 self.ping_flag]

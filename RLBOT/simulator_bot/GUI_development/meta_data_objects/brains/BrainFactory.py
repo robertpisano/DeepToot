@@ -2,8 +2,8 @@ from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.brains.Minim
 
 
 class BrainFactory:
-    brainList = {'MinimumTimeToBall':MinimumTimeToBallBrain}
+    list = {'MinimumTimeToBall':MinimumTimeToBallBrain}
 
     @staticmethod
     def create(key):
-        return BrainFactory.brainList[key]()
+        return BrainFactory.list[key]()

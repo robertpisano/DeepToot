@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1357</width>
+    <width>1330</width>
     <height>686</height>
    </rect>
   </property>
@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QGroupBox" name="GameStateParametersGroup">
+   <widget class="QGroupBox" name="InitialConditionsGroup">
     <property name="geometry">
      <rect>
       <x>830</x>
@@ -26,7 +26,7 @@
     <property name="title">
      <string>Scenario Parameters</string>
     </property>
-    <widget class="QComboBox" name="comboBox_scenarioPresets">
+    <widget class="QComboBox" name="comboBox_initialConditionsPresets">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -36,7 +36,7 @@
       </rect>
      </property>
     </widget>
-    <widget class="QLabel" name="label_scenarioPresets">
+    <widget class="QLabel" name="label_initialConditions">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -49,7 +49,7 @@
       <string>Scenario Presets</string>
      </property>
     </widget>
-    <widget class="QGroupBox" name="InitialConditionsGroup">
+    <widget class="QGroupBox" name="InitialConditionsParametersGroup">
      <property name="geometry">
       <rect>
        <x>230</x>
@@ -61,6 +61,16 @@
      <property name="title">
       <string>Initial Conditions</string>
      </property>
+     <widget class="QTableWidget" name="tableWidget_initialConditions">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>231</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QPushButton" name="pushButton_execute">
@@ -582,7 +592,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1357</width>
+     <width>1330</width>
      <height>21</height>
     </rect>
    </property>
@@ -595,7 +605,7 @@
   <tabstop>tableWidget_drivingMiscOptions</tabstop>
   <tabstop>pushButton_plotData</tabstop>
   <tabstop>checkBox_carPosition</tabstop>
-  <tabstop>comboBox_scenarioPresets</tabstop>
+  <tabstop>comboBox_initialConditionsPresets</tabstop>
   <tabstop>comboBox_brainPresets</tabstop>
   <tabstop>comboBox_aerialControllerType</tabstop>
   <tabstop>comboBox_drivingControllerType</tabstop>

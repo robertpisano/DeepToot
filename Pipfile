@@ -21,29 +21,8 @@ gekko = "*"
 rel-imp = "*"
 inputs = "*"
 cd = "*"
-
-[requires]
-python_version = "3.7"
-
-[scripts]
-[requires]
-python_version = "3.7"
-
-[scripts]
-[requires]
-python_version = "3.7"
-
-[scripts]
-
-[requires]
-python_version = "3.7"
-
-[scripts]
-
-[requires]
-python_version = "3.7"
-
-[scripts]
+PyQt5 = "*"
+protobuf = "==3.8.0"
 
 [requires]
 python_version = "3.7"

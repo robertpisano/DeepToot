@@ -9,13 +9,6 @@ from DeepToot.RLBOT.simulator_bot.GUI_development.socket_test import TestSocketC
 from rlbot.agents.base_agent import BaseAgent
 from DeepToot.RLBOT.simulator_bot.GUI_development.msg_protocol import *
 
-class GUI():
-    def __init__(self):
-        None
-    
-    def initialize_frame(self):
-        None
-
 
 class ICPThread(Thread):
     def __init__(self, ip:"", port:int, bot:BaseAgent):
@@ -43,10 +36,11 @@ class ICPThread(Thread):
                     print('ready[0] true')
                     received_class = self.recvall(client)
                     # Set bot inside of received class
-                    received_class.bot = self.bot 
+                    # received_class.bot = self.bot 
                     # Get method attribute from process list and run method
                     # TODO: Makepip this a loop that will run through the process list
-                    getattr(received_class, received_class.scenario_initialization_process_list[0])()
+                    # getattr(received_class, received_class.scenario_initialization_process_list[0])()
+                    print(received_class)
                     
             except socket.error as error:#, msg:
                 print("Socket error! %s" % error.strerror)

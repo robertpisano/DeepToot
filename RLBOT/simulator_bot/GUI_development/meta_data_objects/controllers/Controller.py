@@ -8,7 +8,7 @@ class Controller(MetaDataObject):
     
     t0: float  # initial time that controller was started"""
     t: float   # the current time the controller should use when doing its time based calculations"""
-    # controllerParams: dict # all the parameters that define the controller, typically gains/coefficients """
+    # params: dict # all the parameters that define the controller, typically gains/coefficients """
     # miscOptions: dict      # misc options that the controller may need to operate properly"""
     
     def __init__(self):

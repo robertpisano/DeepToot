@@ -6,8 +6,14 @@ import gui_functions
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.controllers.Controller import Controller
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.controllers.ControllerFactory import ControllerFactory
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.brains.BrainFactory import BrainFactory
+from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.InitialConditions.InitialConditionsFactory import InitialConditionsFactory
+from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.AbstractMetaDataObjectFactory import AbstractMetaDataObjectFactory
+from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.MetaDataObject import MetaDataObject
+from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.SimulationDataObject import SimulationDataObject
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 
+# Socket imports
+from DeepToot.RLBOT.simulator_bot.GUI_development import client
 
 class Ui_DeepTootControllerFull(Ui_DeepTootController):
     """This extension inherits the .ui converted to .py file class and extends it to 
@@ -18,45 +24,55 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         Ui_DeepTootController ([type]): [description]
     """    
     def set_event_handling(self):
-        self.pushButton_execute.clicked.connect(gui_functions.print_hello)
+        self.pushButton_execute.clicked.connect(self.execute)
         
         # Set Driving COntroller combobox update signals
-        self.comboBox_drivingControllerType.currentIndexChanged.connect(lambda: self.populate_table(ControllerFactory.create(str(self.comboBox_drivingControllerType.currentText())).params, self.tableWidget_drivingParams))
-        self.comboBox_drivingControllerType.currentIndexChanged.connect(lambda: self.populate_table(ControllerFactory.create(str(self.comboBox_drivingControllerType.currentText())).miscOptions, self.tableWidget_drivingMiscOptions))
+        self.comboBox_drivingControllerType.currentIndexChanged.connect(
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_drivingControllerType.currentText())).params, self.tableWidget_drivingParams)
+            )
+        self.comboBox_drivingControllerType.currentIndexChanged.connect(
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_drivingControllerType.currentText())).miscOptions, self.tableWidget_drivingMiscOptions)
+            )
         
         # Set aerial controller combobox update signals
         self.comboBox_aerialControllerType.currentIndexChanged.connect(
-            lambda: self.populate_table(ControllerFactory.create(str(self.comboBox_aerialControllerType.currentText())).params, self.tableWidget_aerialParams)
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_aerialControllerType.currentText())).params, self.tableWidget_aerialParams)
             )
         self.comboBox_aerialControllerType.currentIndexChanged.connect(
-            lambda: self.populate_table(ControllerFactory.create(str(self.comboBox_aerialControllerType.currentText())).miscOptions, self.tableWidget_aerialMiscOptions)
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_aerialControllerType.currentText())).miscOptions, self.tableWidget_aerialMiscOptions)
             )
         
         # Set brain presets table combobox signals
         self.comboBox_brainPresets.currentIndexChanged.connect(
-            lambda: self.populate_table(BrainFactory.create(str(self.comboBox_brainPresets.currentText())).params, self.tableWidget_brainParams)
-        )
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_brainPresets.currentText())).params, self.tableWidget_brainParams)
+            )
         self.comboBox_brainPresets.currentIndexChanged.connect(
-            lambda: self.populate_table(BrainFactory.create(str(self.comboBox_brainPresets.currentText())).miscOptions, self.tableWidget_brainMiscOptions)
-        )
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_brainPresets.currentText())).miscOptions, self.tableWidget_brainMiscOptions)
+            )
+
+        # Set Initial conditions table combobox signals
+        self.comboBox_initialConditionsPresets.currentIndexChanged.connect(
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_initialConditionsPresets.currentText())).params, self.tableWidget_initialConditions)
+            )
 
     def populate_combo_boxes(self):
         """Populate combo boxes with available classes from factories
         """        
         # Driving Controller
-        for i in ControllerFactory.controllerList:
+        for i in ControllerFactory.list:
             self.comboBox_drivingControllerType.addItem(i)
         
         # Aerial Controller
-        for i in ControllerFactory.controllerList:
+        for i in ControllerFactory.list:
             self.comboBox_aerialControllerType.addItem(i)
         
         # Brain Presets
-        for i in BrainFactory.brainList:
+        for i in BrainFactory.list:
             self.comboBox_brainPresets.addItem(i)
 
         # Initial COnditions
-        # TODO: popultae initial condition combobox
+        for i in InitialConditionsFactory.list:
+            self.comboBox_initialConditionsPresets.addItem(i)
 
     def populate_table(self, optionList, table: QTableWidget):
         """Take in list of options and table to place options on. Set items on
@@ -84,4 +100,38 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
             table.setItem(row, 0, QTableWidgetItem(key))
             # Set parameter value in second column
             table.setItem(row, 1, QTableWidgetItem(str(optionList[key])))
+    
+    def generate_data_object_from_table(self, comboBox, tableParams:QTableWidget, tableMiscOptions:QTableWidget):
+        # Get type from combobox
+        obj = AbstractMetaDataObjectFactory.create(str(comboBox.currentText()))
         
+        for row in range(0, tableParams.rowCount()):
+            obj.params[tableParams.item(row, 0).text()] = tableParams.item(row, 1).text()
+        
+        for row in range(0, tableMiscOptions.rowCount()):
+            obj.miscOptions[tableMiscOptions.item(row, 0).text()] = tableMiscOptions.item(row, 1).text()
+
+        return obj
+        
+        
+    def execute(self):
+        """Execute will parse data from the tables and intantiate a SimulationDataObject to be sent over the socket.
+        It will then be sent over the socket to the bot.
+        """        
+        # Instantiate driving controller
+        dc = self.generate_data_object_from_table(self.comboBox_drivingControllerType, self.tableWidget_drivingParams, self.tableWidget_drivingMiscOptions)
+        
+        # aerial controller
+        ac = self.generate_data_object_from_table(self.comboBox_aerialControllerType, self.tableWidget_aerialParams, self.tableWidget_aerialMiscOptions)
+        
+        # brain
+        b = self.generate_data_object_from_table(self.comboBox_brainPresets, self.tableWidget_brainParams, self.tableWidget_brainMiscOptions)
+        
+        # initial conditions
+        ic = self.generate_data_object_from_table(self.comboBox_initialConditionsPresets, self.tableWidget_initialConditions, self.tableWidget_initialConditions)
+
+        # Generate simulation data object
+        simulationDataObject = SimulationDataObject(dc, ac, b, ic)
+        
+        # Send object over socket
+        client.sendSocketMessage(simulationDataObject)
