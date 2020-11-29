@@ -1,8 +1,10 @@
-
-
-class MetaDataObject:
+class MetaDataObject():
     params: dict
     miscOptions: dict
+    __name__ = 'MetaDataObject'
 
     def __init__(self):
         pass
+
+    def init_from_dict(self, dict, name):
+        self.params = dict[name].params

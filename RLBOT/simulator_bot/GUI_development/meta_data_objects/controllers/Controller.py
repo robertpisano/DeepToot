@@ -1,7 +1,7 @@
 from rlbot.agents.base_agent import SimpleControllerState
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.MetaDataObject import MetaDataObject
 
-class Controller(MetaDataObject):
+class Controller(MetaDataObject, object):
     """Controller Abstract class. Holds controller parameters, miscilaneous options, and
     a calculate_control method which should return a SimpleControllerState()
     """    
@@ -19,5 +19,8 @@ class Controller(MetaDataObject):
 
     def update_controller_state(self):
         raise NotImplementedError
+
+    def update_t0(self, t0: float):
+        self.t0 = t0
         
 

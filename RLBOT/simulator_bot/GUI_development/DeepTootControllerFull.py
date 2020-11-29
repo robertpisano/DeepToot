@@ -33,6 +33,7 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         self.comboBox_drivingControllerType.currentIndexChanged.connect(
             lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_drivingControllerType.currentText())).miscOptions, self.tableWidget_drivingMiscOptions)
             )
+
         
         # Set aerial controller combobox update signals
         self.comboBox_aerialControllerType.currentIndexChanged.connect(
@@ -61,7 +62,7 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         # Driving Controller
         for i in ControllerFactory.list:
             self.comboBox_drivingControllerType.addItem(i)
-        
+
         # Aerial Controller
         for i in ControllerFactory.list:
             self.comboBox_aerialControllerType.addItem(i)
@@ -107,9 +108,12 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         
         for row in range(0, tableParams.rowCount()):
             obj.params[tableParams.item(row, 0).text()] = tableParams.item(row, 1).text()
-        
+            print('table data: ', tableParams.item(row, 0).text(), tableParams.item(row,1).text())
+            print('obj.params', obj.params)
+
         for row in range(0, tableMiscOptions.rowCount()):
             obj.miscOptions[tableMiscOptions.item(row, 0).text()] = tableMiscOptions.item(row, 1).text()
+            print(tableMiscOptions.item(row, 0).text())
 
         return obj
         
@@ -132,6 +136,24 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
 
         # Generate simulation data object
         simulationDataObject = SimulationDataObject(dc, ac, b, ic)
-        
+
+
+        # Permenantly change dc.param to see if change is emulated when object is recreated from serialized data
+        # simulationDataObject.drivingController = AbstractMetaDataObjectFactory.create('DrivingController')
+        # simulationDataObject.drivingController.params['kp'] = 101010
+        # print(simulationDataObject.drivingController.params)
+
+        # # DEBUGGING:
+        from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.SerializationFactory import SerializationFactory
+        # # Serialize object
+        serialized = SerializationFactory.listify(simulationDataObject)
+
+        deserialized = SerializationFactory.delistify(serialized)
+
+        print(deserialized)
+        # print()
+        # pass
+
+
         # Send object over socket
         client.sendSocketMessage(simulationDataObject)

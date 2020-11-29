@@ -4,7 +4,7 @@ from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.controllers.
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.controllers.OpenLoopAerialController import OpenLoopAerialController
 
 class ControllerFactory:
-    list = {'AerialController':AerialController, 'Driving Controller':DrivingController}
+    list = {'AerialController':AerialController, 'DrivingController':DrivingController}
 
     @staticmethod
     def create(key):

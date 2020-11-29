@@ -8,7 +8,7 @@ from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.InitialCondi
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.MetaDataObject import MetaDataObject
 
 class AbstractMetaDataObjectFactory():
-    list = {'AerialController':AerialController, 'Driving Controller':DrivingController,
+    list = {'AerialController':AerialController, 'DrivingController':DrivingController,
     'MinimumTimeToBall':MinimumTimeToBallBrain,
     'Testing' :InitialConditionsTesting,'Attack2' :InitialConditions,'Kickoff1' :InitialConditions}
 
@@ -18,4 +18,4 @@ class AbstractMetaDataObjectFactory():
             return AbstractMetaDataObjectFactory.list[key]()
         else:
             return MetaDataObject()
-
+    

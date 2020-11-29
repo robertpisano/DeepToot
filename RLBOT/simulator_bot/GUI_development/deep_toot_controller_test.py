@@ -11,6 +11,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_DeepTootControllerFull):
         self.setupUi(self)
         self.set_event_handling()
         self.populate_combo_boxes()
+        
 
 
 app = QtWidgets.QApplication(sys.argv)
