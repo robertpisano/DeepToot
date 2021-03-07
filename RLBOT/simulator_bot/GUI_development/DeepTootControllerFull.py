@@ -6,11 +6,10 @@ import gui_functions
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.controllers.Controller import Controller
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.controllers.ControllerFactory import ControllerFactory
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.brains.BrainFactory import BrainFactory
-from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.InitialConditions.InitialConditionsFactory import InitialConditionsFactory
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.AbstractMetaDataObjectFactory import AbstractMetaDataObjectFactory
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.MetaDataObject import MetaDataObject
 from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.SimulationDataObject import SimulationDataObject
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QAbstractScrollArea
 
 # Socket imports
 from DeepToot.RLBOT.simulator_bot.GUI_development import client
@@ -53,8 +52,12 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
 
         # Set Initial conditions table combobox signals
         self.comboBox_initialConditionsPresets.currentIndexChanged.connect(
-            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_initialConditionsPresets.currentText())).params, self.tableWidget_initialConditions)
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_initialConditionsPresets.currentText())).params, self.tableWidget_initialConditionsParameters)
             )
+        
+        self.comboBox_initialConditionsPresets.currentIndexChanged.connect(
+            lambda: self.populate_table(AbstractMetaDataObjectFactory.create(str(self.comboBox_initialConditionsPresets.currentText())).miscOptions, self.tableWidget_initialConditionsMiscOptions)
+        )
 
     def populate_combo_boxes(self):
         """Populate combo boxes with available classes from factories
@@ -72,7 +75,7 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
             self.comboBox_brainPresets.addItem(i)
 
         # Initial COnditions
-        for i in InitialConditionsFactory.list:
+        for i in AbstractMetaDataObjectFactory.initialConditionsList:
             self.comboBox_initialConditionsPresets.addItem(i)
 
     def populate_table(self, optionList, table: QTableWidget):
@@ -88,6 +91,7 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         table.setColumnCount(2)
         # Set table to have as many rows as there are options
         table.setRowCount(len(optionList.keys()))
+        table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
 
         #Disable sorting
         table.setSortingEnabled(False)
@@ -101,6 +105,8 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
             table.setItem(row, 0, QTableWidgetItem(key))
             # Set parameter value in second column
             table.setItem(row, 1, QTableWidgetItem(str(optionList[key])))
+
+        table.resizeColumnsToContents()
     
     def generate_data_object_from_table(self, comboBox, tableParams:QTableWidget, tableMiscOptions:QTableWidget):
         # Get type from combobox
@@ -109,11 +115,12 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         for row in range(0, tableParams.rowCount()):
             obj.params[tableParams.item(row, 0).text()] = tableParams.item(row, 1).text()
             print('table data: ', tableParams.item(row, 0).text(), tableParams.item(row,1).text())
-            print('obj.params', obj.params)
+            print('added param: ', obj.params[tableParams.item(row, 0).text()])
+        print('obj.params', obj.params)
 
         for row in range(0, tableMiscOptions.rowCount()):
             obj.miscOptions[tableMiscOptions.item(row, 0).text()] = tableMiscOptions.item(row, 1).text()
-            print(tableMiscOptions.item(row, 0).text())
+            print('added miscOptions: ', obj.miscOptions[tableMiscOptions.item(row, 0).text()])
 
         return obj
         
@@ -132,7 +139,7 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
         b = self.generate_data_object_from_table(self.comboBox_brainPresets, self.tableWidget_brainParams, self.tableWidget_brainMiscOptions)
         
         # initial conditions
-        ic = self.generate_data_object_from_table(self.comboBox_initialConditionsPresets, self.tableWidget_initialConditions, self.tableWidget_initialConditions)
+        ic = self.generate_data_object_from_table(self.comboBox_initialConditionsPresets, self.tableWidget_initialConditionsParameters, self.tableWidget_initialConditionsMiscOptions)
 
         # Generate simulation data object
         simulationDataObject = SimulationDataObject(dc, ac, b, ic)
@@ -150,7 +157,7 @@ class Ui_DeepTootControllerFull(Ui_DeepTootController):
 
         deserialized = SerializationFactory.delistify(serialized)
 
-        print(deserialized)
+        # print(deserialized)
         # print()
         # pass
 

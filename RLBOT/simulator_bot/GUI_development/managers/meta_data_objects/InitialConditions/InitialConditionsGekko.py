@@ -1,0 +1,24 @@
+# from DeepToot.RLBOT.simulator_bot.gekko_util.gekko_util import *
+from rlbot.utils.game_state_util import CarState, BallState
+from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.MetaDataObject import MetaDataObject
+from gekko import GEKKO
+from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.InitialConditions.InitialConditions import InitialConditions
+from rlbot.utils.game_state_util import Vector3, Physics, Rotator
+
+class InitialConditionsGekko(InitialConditions):
+    params: dict
+    miscOptions: dict
+    def __init__(self):
+        self.params = {'sxi':750.0, 'syi':750.0, 'szi':0.0, 'v_magi':100.0, 
+                        'rolli':0.0, 'pitchi':0.0, 'yawi':0.0, 
+                        'wxi':0.0, 'wyi':0.0, 'wzi':0.0, 
+                        'bxi':1000.0, 'byi':1000.0, 'bzi':0.0,
+                        'bvxi':-1000.0, 'bvyi':-1000.0, 'bvzi':0.0,
+                        'broll':0.0, 'bpitch':0.0, 'byaw':0.0,
+                        'bwxi':0.0, 'bwyi':0.0, 'bwzi':0.0,
+                        'sxf':0.0, 'syf':0.0, 'szf':0.0,
+                        'v_magf':0.0, 'vyf':0.0, 'vzf':0.0,
+                        'rollf':0.0, 'pitchf':0.0, 'yawf':0.0
+                        }
+        self.miscOptions = {}
+        pass

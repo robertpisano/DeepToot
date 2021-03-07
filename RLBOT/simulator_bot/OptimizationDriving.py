@@ -19,12 +19,21 @@ class Optimizer():
 #################GROUND DRIVING OPTIMIZER SETTTINGS##############
         self.d = GEKKO(remote=False) # Driving on ground optimizer
 
-        ntd = 21
+# nt1 nt2 are how many the first half and second half of time will be split
+# t1 t2 are then concatenated to make the time vector which has variable deltaT
+
+        # nt1 = 7
+        # nt2 = 5
+        # t1 = np.linspace(0,0.5, nt1)
+        # t2 = np.linspace(0.55, 1.0, nt2)
+        # self.d.time = np.concatenate((t1,t2), axis=0)
+
+        ntd = 51
 
         self.d.time = np.linspace(0, 1, ntd) # Time vector normalized 0-1
 
         # options
-        self.d.options.NODES = 2
+        self.d.options.NODES = 3
         self.d.options.SOLVER = 3
         self.d.options.IMODE = 6# MPC mode
         # m.options.IMODE = 9 #dynamic ode sequential
@@ -34,7 +43,7 @@ class Optimizer():
         # self.d.options.OTOL = 1
 
         # final time for driving optimizer
-        self.tf = self.d.FV(value=1.0,lb=1,ub=100.0)
+        self.tf = self.d.FV(value=1.0,lb=1,ub=100.0, name='tf')
 
         # allow gekko to change the tf value
         self.tf.STATUS = 1
@@ -42,7 +51,7 @@ class Optimizer():
         # Scaled time for Rocket league to get proper time
 
         # Acceleration variable
-        self.a = self.d.MV(fixed_initial=False, lb = -1, ub = 1)
+        self.a = self.d.MV(fixed_initial=False, lb = -1, ub = 1, name='a')
         self.a.STATUS = 1
         # self.a.DCOST = 1e-1
 
@@ -57,7 +66,7 @@ class Optimizer():
         # self.u_throttle_d.DCOST = 1e-5
 
         # Turning input value also smooth
-        self.u_turning_d = self.d.MV(lb = -1, ub = 1)
+        self.u_turning_d = self.d.MV(lb = -1, ub = 1, name='uturn')
         self.u_turning_d.STATUS = 1
         # self.u_turning_d.DCOST = 1e-1
 
@@ -65,7 +74,7 @@ class Optimizer():
         # Time vector length is nt1 and nt2
         self.p_d = np.zeros(ntd)
         self.p_d[-1] = 1.0
-        self.final = self.d.Param(value = self.p_d)
+        self.final = self.d.Param(value = self.p_d, name='final')
 
         # integral over time for u_pitch^2
         # self.u2_pitch = self.d.Var(value=0)
@@ -75,45 +84,77 @@ class Optimizer():
 
         # variables intial conditions are placed here
             # Position and Velocity in 2d
-        self.sx = self.d.Var(value=si[0], lb=-4096, ub=4096) #x position
-        self.sy = self.d.Var(value=si[1], lb=-5120, ub=5120) #y position
+        self.sx = self.d.Var(value=si[0], lb=-4096, ub=4096, name='x') #x position
+        self.sy = self.d.Var(value=si[1], lb=-5120, ub=5120, name='y') #y position
 
             # Pitch rotation and angular velocity
-        self.yaw = self.d.Var(value = ri) #orientation yaw angle
-        self.omega = self.d.Var(fixed_initial=False, value=omegai, lb=-5.5, ub=5.5) #angular velocity
+        self.yaw = self.d.Var(value = ri, name='yaw') #orientation yaw angle
+        self.omega = self.d.Var(fixed_initial=False, name='w') #angular velocity
         # self.v_mag = self.d.Intermediate(self.d.sqrt((self.vx**2) + (self.vy**2)))
 
-        self.v_mag = self.d.Var(value = vi, ub = 2300, lb =0)
+        self.v_mag = self.d.Var(value = vi, ub = 2300, lb =0, name='v_mag')
         # self.v_inter = self.d.Var(value = vi)
-        self.vx = self.d.Var(value=(np.cos(ri) * vi)) #x velocity
-        self.vy = self.d.Var(value=(np.sin(ri) * vi)) #y velocity
+        self.vx = self.d.Var(value=(np.cos(ri) * vi), name='vx') #x velocity
+        self.vy = self.d.Var(value=(np.sin(ri) * vi), name='vy') #y velocity
+
+        # self.ba = self.d.Param(value = 991.666,name='ba') #acceleration due to boost
+        ba = 991.666
 
         # curvature as a polynomical approximation
-        self.curvature = self.d.Intermediate(0.0069 - ((7.67e-6) * self.v_mag) + ((4.35e-9)*(self.v_mag**2)) - ((1.48e-12) * (self.v_mag**3)) + ((2.37e-16) * (self.v_mag**4)))
+        # self.curvature = self.d.Intermediate(0.0069 - ((7.67e-6) * self.v_mag) + ((4.35e-9)*(self.v_mag**2)) - ((1.48e-12) * (self.v_mag**3)) + ((2.37e-16) * (self.v_mag**4)))
 
-        # velocity dependent acceleration modeled as a cspline
-        ba=991.666 #acceleration due to boost
+        #curvature vs vel as a cubic spline
+        cur = np.array([0.0069, 0.00398, 0.00235, 0.001375, 0.0011, 0.00088])
+        v_cur = np.array([0,500,1000,1500,1750,2300])
+        v_cur_fine = np.linspace(0,2300,100)
+        cur_fine = np.interp(v_cur_fine, v_cur, cur)
+        self.curvature = self.d.Var(name='curvature')
+        self.d.cspline(self.v_mag, self.curvature, v_cur_fine, cur_fine)
+
+        # throttle vs vel as cubic spline
+        ba=991.666
         kv = np.array([0, 1410, 2300]) #velocity input
         ka = np.array([1600+ba, 0+ba, 0+ba]) #acceleration ouput
-        kv_fine = np.linspace(0, 2300, 10) # Finer detail so cspline can fit
-        ka_fine = np.interp(kv_fine, kv, ka) # finder detail acceleration
-        self.kv_fine = kv_fine
-        self.ka_fine = ka_fine
+        kv_lin = np.linspace(0, 2300, 100)
+        pwl = np.interp(kv_lin, kv, ka)
 
-        self.throttle_acceleration = self.d.Var(fixed_initial=False)
-        self.d.cspline(self.v_mag, self.throttle_acceleration, kv_fine, ka_fine)
+        # np_coeffs = np.flip(np.polyfit(kv_lin, pwl, 5)) #Get degree coeff
+        # coeffs = [self.d.Param(c) for c in np_coeffs]
+        
+        self.throttle_acceleration = self.d.Var(fixed_initial=False, name='throttle_accel')
+        self.d.cspline(self.v_mag, self.throttle_acceleration, kv_lin, pwl)
+        # func = np.polynomial.polynomial.Polynomial(np.flip(coeffs))
+        # self.throttle_acceleration = self.d.sum(expressions)
+        # self.d.Equation(self.throttle_acceleration == self.d.sum(expressions))
+        # self.a_intermediate = self.d.Intermediate()
+
+# #piecewise linear
+#         self.v_for_throttle = [0, 1400, 1410, 2300]
+#         self.a_for_throttle = [1600, 160, 0, 0]
+#         self.vp = [self.d.Param(value=self.v_for_throttle[i]) for i in range(4)]
+#         self.ap = [self.d.Param(value=self.a_for_throttle[i]) for i in range(4)]
+#         self.throttle_acceleration = [self.d.Var(lb=self.vp[i], ub=self.vp[i+1]) for i in range(3)]
+
+
 
 # Differental equations
         # self.d.Equation(self.v_inter == self.v_mag)
         self.d.Equation(self.v_mag.dt()/self.tf == (self.a * self.throttle_acceleration))# + (self.u_thrust_d * 991.666))
 
+        # self.d.Equation(self.vx.dt() == self.tf * (self.a * (991.666+60) * self.d.cos(self.yaw)))
+        # self.d.Equation(self.vy.dt() == self.tf * (self.a * (991.666+60) * self.d.sin(self.yaw)))
+        # self.d.Equation(self.vx.dt()==self.tf *(self.a * ((-1600 * self.v_mag/1410) +1600) * self.d.cos(self.yaw)))
+        # self.d.Equation(self.vy.dt()==self.tf *(self.a * ((-1600 * self.v_mag/1410) +1600) * self.d.sin(self.yaw)))
         self.d.Equation(self.vx == (self.v_mag * self.d.cos(self.yaw)))
         self.d.Equation(self.vy == (self.v_mag * self.d.sin(self.yaw)))
+
+        # self.d.Equation(self.yaw.dt() == self.tf * ((self.u_turning_d) * self.curvature * self.v_mag))
+
 
         self.d.Equation(self.sx.dt()/self.tf == self.vx)
         self.d.Equation(self.sy.dt()/self.tf == self.vy)
 
-        self.d.Equation(self.omega/self.tf == ((self.u_turning_d) * (1/self.curvature) * self.v_mag))
+        self.d.Equation(self.omega == ((self.u_turning_d) * self.curvature * self.v_mag))
         self.d.Equation(self.yaw.dt()/self.tf == self.omega)
         # self.d.fix(self.sz, pos = len(self.d.time) - 1, val = 1000)
 
@@ -122,9 +163,9 @@ class Optimizer():
         # Uncomment these 4 objective functions to get a simlple end point optimization
         #sf[1] is y position @ final time etc...
         self.d.Obj(self.final*1e4*((self.sy-sf[1])**2)) # Soft constraints
-        # self.d.Obj(self.final*1e3*(self.vz-vf[1])**2)
+        self.d.Obj(self.final*1e3*((self.vy-vf[1])**2))
         self.d.Obj(self.final*1e4*((self.sx-sf[0])**2)) # Soft constraints
-        # self.d.Obj(self.final*1e3*(self.vx-vf[0])**2)
+        self.d.Obj(self.final*1e3*((self.vx-vf[0])**2))
 
 
         #Objective function to minimize time
@@ -146,6 +187,7 @@ class Optimizer():
 
         #solve
         # self.d.solve('http://127.0.0.1') # Solve with local apmonitor server
+        self.d.open_folder()
         self.d.solve(disp=True)
 
         # NOTE: another data structure type or class here for optimal control vectors
@@ -163,18 +205,15 @@ class Optimizer():
     def getInputData(self):
         return [self.ts, self.a]
 
-
-
-
 # Main Code
 
 opt = Optimizer()
 
-s_ti = [0,0]
-v_ti = 2000
-s_tf = [-2000,-1000]
-v_tf = [00.00, 00.0]
-r_ti = np.pi/2 # inital orientation of the car
+s_ti = [750,750]
+v_ti = 100
+s_tf = [0,0]
+v_tf = [-1000, 0]
+r_ti = 0 # inital orientation of the car
 omega_ti = 0.0 # initial angular velocity of car
 
 acceleration, turning, t_star = opt.optimize2D(s_ti, s_tf, v_ti, v_tf, r_ti, omega_ti)
@@ -192,8 +231,8 @@ fig = plt.figure(2)
 ax = fig.add_subplot(111, projection='3d')
 # plt.subplot(2, 1, 1)
 Axes3D.plot(ax, opt.sx.value, opt.sy.value, ts, c='r', marker ='o')
-plt.ylim(-2500, 2500)
-plt.xlim(-2500, 2500)
+plt.ylim(-1000, 1000)
+plt.xlim(-1000, 1000)
 plt.ylabel('Position y')
 plt.xlabel('Position x')
 ax.set_zlabel('time')
@@ -209,22 +248,87 @@ plt.xlabel('Velocity x')
 ax.set_zlabel('time')
 
 plt.figure(1)
-num_plots = 4
-plt.subplot(num_plots,1,1)
+plt.subplot(3,1,1)
 plt.plot(ts, opt.a, 'r-')
 plt.ylabel('acceleration')
 
-plt.subplot(num_plots,1,2)
+plt.subplot(3,1,2)
 plt.plot(ts, np.multiply(opt.yaw, 1/math.pi), 'r-')
 plt.ylabel('yaw orientation')
 
-plt.subplot(num_plots, 1, 3)
+plt.subplot(3, 1, 3)
 plt.plot(ts, opt.v_mag, 'b-')
 plt.ylabel('vmag')
-
-plt.subplot(num_plots, 1, 4)
-plt.plot(opt.kv_fine, opt.ka_fine, 'r-')
-plt.ylabel('kv vs ka')
 # plt.figure(1)
+#
+# plt.subplot(7,1,1)
+# plt.plot(ts,opt.sz.value,'r-',linewidth=2)
+# plt.ylabel('Position z')
+# plt.legend(['sz (Position)'])
+#
+# plt.subplot(7,1,2)
+# plt.plot(ts,opt.vz.value,'b-',linewidth=2)
+# plt.ylabel('Velocity z')
+# plt.legend(['vz (Velocity)'])
+#
+# # plt.subplot(4,1,3)
+# # plt.plot(ts,mass.value,'k-',linewidth=2)
+# # plt.ylabel('Mass')
+# # plt.legend(['m (Mass)'])
+#
+# plt.subplot(7,1,3)
+# plt.plot(ts,opt.u_thrust.value,'g-',linewidth=2)
+# plt.ylabel('Thrust')
+# plt.legend(['u (Thrust)'])
+#
+# plt.subplot(7,1,4)
+# plt.plot(ts,opt.sx.value,'r-',linewidth=2)
+# plt.ylabel('Position x')
+# plt.legend(['sx (Position)'])
+#
+# plt.subplot(7,1,5)
+# plt.plot(ts,opt.vx.value,'b-',linewidth=2)
+# plt.ylabel('Velocity x')
+# plt.legend(['vx (Velocity)'])
+#
+# # plt.subplot(4,1,3)
+# # plt.plot(ts,mass.value,'k-',linewidth=2)
+# # plt.ylabel('Mass')
+# # plt.legend(['m (Mass)'])
+#
+# plt.subplot(7,1,6)
+# plt.plot(ts,opt.u_pitch.value,'g-',linewidth=2)
+# plt.ylabel('Torque')
+# plt.legend(['u (Torque)'])
+#
+# plt.subplot(7,1,7)
+# plt.plot(ts,opt.pitch.value,'g-',linewidth=2)
+# plt.ylabel('Theta')
+# plt.legend(['p (Theta)'])
+#
+# plt.xlabel('Time')
+
+# plt.figure(2)
+#
+# plt.subplot(2,1,1)
+# plt.plot(opt.m.time,m.t_sx,'r-',linewidth=2)
+# plt.ylabel('traj pos x')
+# plt.legend(['sz (Position)'])
+#
+# plt.subplot(2,1,2)
+# plt.plot(opt.m.time,m.t_sz,'b-',linewidth=2)
+# plt.ylabel('traj pos z')
+# plt.legend(['vz (Velocity)'])
+# #export csv
+#
+# f = open('optimization_data.csv', 'w', newline = "")
+# writer = csv.writer(f)
+# writer.writerow(['time', 'sx', 'sz', 'vx', 'vz', 'u thrust', 'theta', 'omega_pitch', 'u pitch']) # , 'vx', 'vy', 'vz', 'ax', 'ay', 'az', 'quaternion', 'boost', 'roll', 'pitch', 'yaw'])
+# for i in range(len(opt.m.time)):
+#     row = [opt.m.time[i], opt.sx.value[i], opt.sz.value[i], opt.vx.value[i], opt.vz.value[i], opt.u_thrust.value[i], opt.pitch.value[i],
+#     opt.omega_pitch.value[i], opt.u_pitch.value[i]]
+#     writer.writerow(row)
+#     print('wrote row', row)
+
 
 plt.show()

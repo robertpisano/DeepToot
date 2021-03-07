@@ -1,0 +1,26 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+numpy = "*"
+rlbot = "*"
+glob3 = "*"
+matplotlib = "*"
+dill = "*"
+prettyprint = "*"
+termcolor = "*"
+pyquaternion = "*"
+gekko = "*"
+rel-imp = "*"
+inputs = "*"
+numpy-stl = "*"
+control = "*"
+yamlable = "*"
+"ruamel.yaml" = "*"
+
+[requires]
+python_version = "3.7"

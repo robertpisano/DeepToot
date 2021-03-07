@@ -5,3 +5,4 @@ from DeepToot.src.data_generation.entities.state.ball_state import BallState, Ba
 
 class InitialConditionsTraining(InitialConditions):
     params = {'Car':CarState, 'Ball':BallState}
+w

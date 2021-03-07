@@ -15,7 +15,6 @@ def sendSocketMessage(class_to_send):
     """
     Send a message to a socket
     """
-    # Register class with YAML
 
     try:
         client = socket.socket(socket.AF_INET,
@@ -23,7 +22,7 @@ def sendSocketMessage(class_to_send):
         client.connect(ADDR)
         # client.send(yaml.dump(class_to_send).encode('utf-8'))
         client.send(SerializationFactory.listify(class_to_send))
-        print(SerializationFactory.listify(class_to_send))
+        # print(SerializationFactory.listify(class_to_send))
         client.shutdown(socket.SHUT_RDWR)
         client.close()
     except Exception as e:

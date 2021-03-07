@@ -35,7 +35,7 @@ class SerializationFactory:
         dc = AbstractMetaDataObjectFactory.create('DrivingController')
         ac = AbstractMetaDataObjectFactory.create('AerialController')
         brain = AbstractMetaDataObjectFactory.create('MinimumTimeToBall')
-        ic = AbstractMetaDataObjectFactory.create('Testing')
+        ic = AbstractMetaDataObjectFactory.create('InitialConditionsGekko')
         # Set values of each class from the input argument list
         dc.params = fh[0][1][0]
         dc.miscOptions = fh[0][1][1]
@@ -46,9 +46,12 @@ class SerializationFactory:
         brain.miscOptions = fh[2][1][2]
         ic.params = fh[3][1][0]
         ic.miscOptions = fh[3][1][1]
+
+        print('delistify ic.params', ic.params)
+
         # a = cls.create_type(name, dict)()
         a = SimulationDataObject(dc, ac, brain, ic)
-        print(a)
+        # print(a)
         return a
 
 
