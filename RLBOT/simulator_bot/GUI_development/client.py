@@ -8,7 +8,7 @@ import pickle
 import dill
 import yaml
 from DeepToot.RLBOT.simulator_bot.GUI_development.msg_protocol import *
-from DeepToot.RLBOT.simulator_bot.GUI_development.meta_data_objects.SerializationFactory import SerializationFactory
+from DeepToot.src.meta_data_objects.SerializationFactory import SerializationFactory
 
 #----------------------------------------------------------------------
 def sendSocketMessage(class_to_send):

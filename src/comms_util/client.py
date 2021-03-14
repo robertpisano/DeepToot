@@ -3,6 +3,9 @@ import socket
 from DeepToot.src.comms_util.comms_protocol import Message, CommsProtocol, Decoder, Encoder
 import traceback
 
+from DeepToot.src.meta_data_objects.controllers.Controller import Controller
+from DeepToot.src.meta_data_objects.controllers.ControllerFactory import ControllerFactory
+
 class Client:
     def __init__(self): pass
 
@@ -46,4 +49,5 @@ if __name__ == "__main__":
     """Test the use of the Client() class, send execute message and TestClass
     """    
     c = Client()
-    c.send_message(CommsProtocol.types['update'], "109239") 
+    c.send_message(CommsProtocol.types['update'], TestClass()) 
+    c.send_message(CommsProtocol.types['execute'], 'DrivingController')

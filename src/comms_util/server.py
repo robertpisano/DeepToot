@@ -1,13 +1,15 @@
-from multiprocessing import Process, Queue
+# from multiprocessing import Process, Queue
+from threading import Thread
+from queue import SimpleQueue as Queue
 import socket
 from DeepToot.src.comms_util.comms_protocol import Message, CommsProtocol, Decoder
 import select
 import traceback
-from DeepToot.src.comms_util.comms_protocol.client import TestClass
+from DeepToot.src.comms_util.client import TestClass
 
-class Server(Process): 
+class Server(Thread): 
     def __init__(self, ip: "", port: int):
-        Process.__init__(self, target=self.run)
+        Thread.__init__(self, target=self.run)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.msg_queue = Queue() # Queue for message
 
@@ -28,7 +30,7 @@ class Server(Process):
         """        
         while True:
             try:
-                print("Starting socket connection...")
+                print("Waiting for socket connection...")
                 client, addr = self.socket.accept()
                 ready = select.select([client,], [], [], 2)
                 print("Connection started.")

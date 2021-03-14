@@ -10,3 +10,4 @@ pyquaternion
 gekko
 rel-imp
 inputs
+ruamel.yaml

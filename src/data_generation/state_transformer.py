@@ -4,6 +4,7 @@ from DeepToot.src.data_generation.entities.state.car_state import CarState
 import pandas as pd
 import numpy as np
 from DeepToot.src.data_generation.entities.physics.base_3d_vector import Base3DVector
+from pyquaternion import Quaternion
 
 # StateTransformer will convert "raw data" types (ex: GameTickPacket, pandas.DataFrame) into 
 # respective state class for the trajectory builder
@@ -58,10 +59,10 @@ class StateTransformer():
         Returns:
             [type]: [description]
         """       
-        return CarState(position = Base3DVector(np.array([df.loc['location_x'], df.loc['location_y']])),
-            velocity = Base3DVector(np.array([df.loc["velocity_x"], df.loc["velocity_y"]])),
+        return CarState(position = Base3DVector(np.array([df.loc['location_x'], df.loc['location_y'], 0.0])),
+            velocity = Base3DVector(np.array([df.loc["velocity_x"], df.loc["velocity_y"], 0.0])),
             ang_vel = Base3DVector(np.array([0,0,df.loc["angular_velocity_z"]])),
-            orientation = None,
+            orientation = np.array([df.loc["quaternion_w"], df.loc["quaternion_x"],df.loc["quaternion_y"],df.loc["quaternion_z"]]),
             time = df.loc["time"],
             hit_box = None,
             is_demolished = None,

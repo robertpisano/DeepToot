@@ -20,7 +20,7 @@ from Ball import Ball
 from Car import Car
 # from simulator_utilities import SimulationParameters
 
-from DeepToot.RLBOT.simulator_bot.dynamics_util.BouncingBallCalculator import BouncingBallCalculator
+from DeepToot.src.dynamics_util.BouncingBallCalculator import BouncingBallCalculator
 
 class BouncingOptimizer():
     position = []

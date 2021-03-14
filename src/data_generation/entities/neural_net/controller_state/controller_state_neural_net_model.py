@@ -52,7 +52,7 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
                 integer -- the size of the single hidden layer
                 
         """        
-        return 500
+        return 50
 
     def activation_function(self):
         """
@@ -74,6 +74,6 @@ class ControllerStateNeuralNetModel(BaseNeuralNetModel):
             keras.optimizer -- SGD (stochastic gradient descent, learing rate / momentum parameters probably need tuning)
         """        
         return SGD(learning_rate=0.03, 
-                    momentum=0.0, 
+                    momentum=0.1, 
                     nesterov=False, 
                     name="SGD")

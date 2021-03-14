@@ -23,6 +23,9 @@ inputs = "*"
 cd = "*"
 PyQt5 = "*"
 protobuf = "==3.8.0"
+ruamel-yaml = "*"
+yamlable = "*"
+pyqtgraph = "*"
 
 [requires]
 python_version = "3.7"
