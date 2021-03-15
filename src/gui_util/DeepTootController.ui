@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DeepTootController</class>
+ <widget class="QMainWindow" name="DeepTootController">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1387</width>
+    <height>683</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QGroupBox" name="InitialConditionsGroup">
+    <property name="geometry">
+     <rect>
+      <x>830</x>
+      <y>0</y>
+      <width>491</width>
+      <height>351</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Scenario Parameters</string>
+    </property>
+    <widget class="QComboBox" name="comboBox_initialConditionsPresets">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>131</width>
+       <height>22</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_initialConditions">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>91</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Scenario Presets</string>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget_initialConditionsMiscOptions">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>70</y>
+       <width>231</width>
+       <height>271</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget_initialConditionsParameters">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>70</y>
+       <width>231</width>
+       <height>271</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="pushButton_execute">
+    <property name="geometry">
+     <rect>
+      <x>1180</x>
+      <y>610</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Execute</string>
+    </property>
+   </widget>
+   <widget class="QGroupBox" name="ControllerSetupGroup">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>811</width>
+      <height>431</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Controller Setup</string>
+    </property>
+    <widget class="QGroupBox" name="ControllerParametersGroup">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>10</y>
+       <width>241</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Driving Controller Parameters</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget_drivingParams">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>241</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="MiscOptionsGroup">
+     <property name="geometry">
+      <rect>
+       <x>520</x>
+       <y>10</y>
+       <width>231</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Driving Misc Options</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget_drivingMiscOptions">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>231</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QComboBox" name="comboBox_drivingControllerType">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>171</width>
+       <height>22</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>111</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Driving Controller Type</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="comboBox_aerialControllerType">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>240</y>
+       <width>171</width>
+       <height>22</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>220</y>
+       <width>111</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Aerial Controller Type</string>
+     </property>
+    </widget>
+    <widget class="QGroupBox" name="AerialMiscOptionsGroup">
+     <property name="geometry">
+      <rect>
+       <x>520</x>
+       <y>220</y>
+       <width>231</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Aerial Misc Options</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget_aerialMiscOptions">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>231</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="AerialControllerParametersGroup">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>220</y>
+       <width>241</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Aerial Controller Parameters</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget_aerialParams">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>241</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_debuggingOptions">
+    <property name="geometry">
+     <rect>
+      <x>830</x>
+      <y>560</y>
+      <width>341</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Debugging Options</string>
+    </property>
+    <widget class="QPushButton" name="pushButton_startDebugging">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>30</y>
+       <width>91</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Start Debugging</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="comboBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>181</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <item>
+      <property name="text">
+       <string>Aerial Only Debugging</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Driving Only Debugging</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Debug Type 1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Debug Type 2</string>
+      </property>
+     </item>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_plottingOptions">
+    <property name="geometry">
+     <rect>
+      <x>830</x>
+      <y>350</y>
+      <width>341</width>
+      <height>211</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Plotting Options</string>
+    </property>
+    <widget class="QPushButton" name="pushButton_plotData">
+     <property name="geometry">
+      <rect>
+       <x>260</x>
+       <y>180</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Plot Data</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_carPosition">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>70</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Position</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_carVelocity">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>90</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Velocity</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_carOrientation">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>110</y>
+       <width>81</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Orientation</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>61</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Data to Plot</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_ballPosition">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>70</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Position</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_ballVelocity">
+     <property name="geometry">
+      <rect>
+       <x>240</x>
+       <y>90</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Velocity</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_9">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>90</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Boost</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_inputThrottle">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>70</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Throttle</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_inputSteer">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>110</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Steer</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_carAngVel">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>130</y>
+       <width>101</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Angular Velocity</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_inputJump">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>130</y>
+       <width>70</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Jump</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_selectCarData">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>40</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Car Data</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_selectInputData">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>40</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Input Data</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_selectBallData">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>40</y>
+       <width>75</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Ball Data</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="BrainTypeGroup">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>440</y>
+      <width>811</width>
+      <height>201</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Brain Type</string>
+    </property>
+    <widget class="QComboBox" name="comboBox_brainPresets">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>131</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="editable">
+      <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_brainPresets">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>91</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Brain Presets</string>
+     </property>
+    </widget>
+    <widget class="QGroupBox" name="BrainParametersGroup">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>10</y>
+       <width>241</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Brain Parameters</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget_brainParams">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>241</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QGroupBox" name="BrainMiscOptionsGroup">
+     <property name="geometry">
+      <rect>
+       <x>520</x>
+       <y>10</y>
+       <width>231</width>
+       <height>181</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Final Conditions</string>
+     </property>
+     <widget class="QTableWidget" name="tableWidget_brainMiscOptions">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>231</width>
+        <height>161</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="pushButton_update">
+    <property name="geometry">
+     <rect>
+      <x>1180</x>
+      <y>570</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Update</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_terminate">
+    <property name="geometry">
+     <rect>
+      <x>1280</x>
+      <y>610</y>
+      <width>75</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Terminate</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1387</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <tabstops>
+  <tabstop>checkBox_carOrientation</tabstop>
+  <tabstop>checkBox_carVelocity</tabstop>
+  <tabstop>tableWidget_drivingMiscOptions</tabstop>
+  <tabstop>pushButton_plotData</tabstop>
+  <tabstop>checkBox_carPosition</tabstop>
+  <tabstop>comboBox_initialConditionsPresets</tabstop>
+  <tabstop>comboBox_brainPresets</tabstop>
+  <tabstop>comboBox_aerialControllerType</tabstop>
+  <tabstop>comboBox_drivingControllerType</tabstop>
+  <tabstop>comboBox</tabstop>
+  <tabstop>pushButton_startDebugging</tabstop>
+  <tabstop>checkBox_ballPosition</tabstop>
+  <tabstop>checkBox_ballVelocity</tabstop>
+  <tabstop>checkBox_9</tabstop>
+  <tabstop>checkBox_inputThrottle</tabstop>
+  <tabstop>checkBox_inputSteer</tabstop>
+  <tabstop>checkBox_carAngVel</tabstop>
+  <tabstop>checkBox_inputJump</tabstop>
+  <tabstop>pushButton_selectCarData</tabstop>
+  <tabstop>pushButton_selectInputData</tabstop>
+  <tabstop>pushButton_selectBallData</tabstop>
+  <tabstop>pushButton_execute</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
