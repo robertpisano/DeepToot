@@ -57,6 +57,7 @@ class Server(Thread):
         except:
             print("Force closed socket")
             self.socket.close()
+            self.run()
     
     def receive_message(self, sock):
         """Receive full message even if it's larger than buffer size (as a string)
