@@ -13,3 +13,4 @@ numpy-stl
 control
 ruamel.yaml
 yamlable
+marshmallow

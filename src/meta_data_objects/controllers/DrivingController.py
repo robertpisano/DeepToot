@@ -9,7 +9,7 @@ class DrivingController(Controller):
         self.__name__ = 'DrivingController'
         pass
 
-    def calculate_control(self, packet) -> SimpleControllerState:
+    def calculate_control(self, packet, index) -> SimpleControllerState:
         controller_state = SimpleControllerState()
         controller_state.throttle = .1
         controller_state.steer = 1

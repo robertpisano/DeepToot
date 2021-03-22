@@ -27,6 +27,7 @@ from DeepToot.src.meta_data_objects.SerializationFactory import SerializationFac
 
 
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
+from rlbot.utils.game_state_util import GameState, BallState, CarState, Physics, Vector3, Rotator, GameInfoState
 
 from threading import Thread, Lock
 import select
@@ -36,6 +37,7 @@ import dill
 import yaml
 import time
 from importlib import reload
+import numpy as np
 
 class SystemManager(Server):
     # drivingController: Controller
@@ -49,7 +51,8 @@ class SystemManager(Server):
         # Initialize socket reading thread
         Server.__init__(self, ip, port)
 
-        self.execute = False
+        self.execute = False # Execute flag, lets manager know to terminate/or execute
+        self.initialized = False # Initialize flag, will let manager know if the game state has been initialized or not
 
         self.object_types = {'dc':'DrivingController', 'ac':'DrivingController', 'brain':'MinimumTimeToBall', 'initial_conditions':'InitialConditionsGekko'}
         
@@ -70,7 +73,7 @@ class SystemManager(Server):
         # Reset started flag
         self.started=False
 
-    def run_bot(self, packet):
+    def run_bot(self, packet, rigid_packet, bot):
         # Check msg_queue
         try:
             msg = self.msg_queue.get(block=False)
@@ -80,19 +83,42 @@ class SystemManager(Server):
         
         try:
             # Do things with message
-            self.msg_update(msg)
+            if msg != None: self.msg_update(msg)
             # print("val: ", self.test.val)
         except Exception as e:
             print(e)
 
         if(self.execute == True):
+            # Initialize if necessary
+            if(not self.initialized): 
+                self.initialize_game_state(bot)
+                self.initialized = True
+
             # Get controller action
             controller_state = SimpleControllerState()
-            controller_state = self.drivingController.calculate_control(None)
-            print(controller_state.steer)
+            controller_state = self.drivingController.calculate_control(packet=packet, index=bot.index)
             return controller_state
         else:
             return SimpleControllerState()
+
+    def initialize_game_state(self, bot):
+        # Get the initial car state
+        ic = self.initialConditions.params
+        pos = Vector3(x=ic['sxi'], y=ic['syi'], z=17.01)
+        vel = Vector3(x=ic['v_magi']*np.cos(ic['yawi']), y=ic['v_magi']*np.sin(ic['yawi']), z=0)
+        rot = Rotator(roll = ic['rolli'], pitch=ic['pitchi'], yaw=ic['yawi'])
+        cs = CarState(Physics(location=pos, velocity=vel, rotation=rot), boost_amount=100)
+
+        # Get the inital ball state
+        bpos = Vector3(x=ic['bxi'], y=ic['byi'], z=92.75)
+        bvel = Vector3(x=ic['bvxi'], y=ic['bvyi'], z=0)
+        bs = BallState(Physics(location=bpos, velocity=bvel))
+
+        # Set game state
+        gs = GameState(ball = bs, cars={bot.index: cs})
+
+        # Set environment
+        bot.set_game_state(gs)
 
     def msg_update(self, msg):
 # Update classes dynamically
@@ -106,10 +132,10 @@ class SystemManager(Server):
             from DeepToot.src.meta_data_objects.InitialConditions.InitialConditionsFactory import InitialConditionsFactory, InitialConditionsSchema
             from DeepToot.src.dynamic_class_util.dynamic_class import TestClass
             self.test = TestClass()
-            self.drivingController = ControllerFactory.create(self.object_types['dc'])
+            self.drivingController = ControllerFactory.create('TPNDrivingController')
             self.aerialController = ControllerFactory.create(self.object_types['ac'])
             self.brain = BrainFactory.create(self.object_types['brain'])
-            self.initialConditions = InitialConditionsFactory.create(self.object_types['initial_conditions'])
+            self.initialConditions = InitialConditionsFactory.create('InitialConditionsGekko')
             # print(self.test.val)
             pass
 
@@ -120,7 +146,7 @@ class SystemManager(Server):
             # Update execute flag
             self.execute = True
 
-            # Pull object types from message, update local objects
+            # Pull object types from message, update local objects using marshmallow loads.
             self.dataObject = SimulationDataObjectSchema().loads(msg.data)
             print(self.dataObject)
             pass
@@ -130,3 +156,4 @@ class SystemManager(Server):
             print('terminating... ')
             # update execute flag
             self.execute = False
+            self.initialized = False

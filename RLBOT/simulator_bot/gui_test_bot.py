@@ -3,6 +3,7 @@ import DeepToot.RLBOT.simulator_bot.GUI_development.socket_types
 import os
 from DeepToot.src.managers.SystemManager import SystemManager
 from DeepToot.src.comms_util.comms_protocol import CommsProtocol
+import traceback
 
 class SocketTestBot(BaseAgent, SystemManager):
     
@@ -12,9 +13,9 @@ class SocketTestBot(BaseAgent, SystemManager):
     
     def get_output(self, game_tick_packet):
         try:
-            controllerstate = self.run_bot(self.get_rigid_body_tick())
+            controllerstate = self.run_bot(packet = game_tick_packet, rigid_packet=self.get_rigid_body_tick(), bot=self)
         except Exception as e:
             controllerstate = SimpleControllerState()
-            print(e)
+            traceback.print_exc()
 
         return controllerstate

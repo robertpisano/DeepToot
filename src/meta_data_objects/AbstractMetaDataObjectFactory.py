@@ -1,6 +1,7 @@
 from DeepToot.src.meta_data_objects.controllers.Controller import Controller
 from DeepToot.src.meta_data_objects.controllers.AerialController import AerialController
 from DeepToot.src.meta_data_objects.controllers.DrivingController import DrivingController
+from DeepToot.src.meta_data_objects.controllers.TPNDrivingController import TPNDrivingController
 from DeepToot.src.meta_data_objects.controllers.OpenLoopAerialController import OpenLoopAerialController
 from DeepToot.src.meta_data_objects.brains.MinimumTimeToBallBrain import MinimumTimeToBallBrain
 from DeepToot.src.meta_data_objects.InitialConditions.InitialConditions import InitialConditions
@@ -9,7 +10,7 @@ from DeepToot.src.meta_data_objects.InitialConditions.InitialConditionsGekko imp
 from DeepToot.src.meta_data_objects.MetaDataObject import MetaDataObject
 
 class AbstractMetaDataObjectFactory():
-    controllerList = {'AerialController':AerialController, 'DrivingController':DrivingController,}
+    controllerList = {'AerialController':AerialController, 'DrivingController':DrivingController, 'TPNDrivingController':TPNDrivingController}
     
     brainList = {'MinimumTimeToBall':MinimumTimeToBallBrain}
 

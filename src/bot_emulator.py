@@ -16,7 +16,7 @@ class SocketTestBot(BaseAgent, SystemManager):
     
     def get_output(self, game_tick_packet):
         try:
-            controllerstate = self.run_bot(RigidBodyTick())
+            controllerstate = self.run_bot(packet=RigidBodyTick(), bot=self)
         except:
             # Reset manager
             # self.manager = SystemManager(index = self.index, ip = '127.0.0.1', port = 5050)
