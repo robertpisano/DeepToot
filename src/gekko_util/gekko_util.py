@@ -16,7 +16,6 @@ class Conditions():
         self.r = r
         self.w = w
         yaw = r.yaw
-        print('yaw:', yaw)
         vx = v_mag * np.cos(yaw)
         vy = v_mag * np.sin(yaw)
         self.v = Vector3(x=vx, y=vy, z=0.0)
@@ -32,7 +31,9 @@ class Conditions():
         s = Vector3(float(i['sxi']), float(i['syi']), float(i['szi']))
         v = float(i['v_magi'])
         r = Rotator(roll=float(i['rolli']), pitch=float(i['pitchi']), yaw=float(i['yawi']))
-        condit = Conditions(s=s, v_mag=v, r=r)
+        bs = Vector3(float(i['bxi']), float(i['byi']), float(i['bzi']))
+        bv = Vector3(float(i['bvxi']), float(i['bvyi']), float(i['bvzi']))
+        condit = Conditions(s=s, v_mag=v, r=r, bs=bs, bv=bv)
         return condit
 
     @staticmethod
@@ -85,7 +86,48 @@ class Optimizer(GEKKO):
     def set_objectives(self, fc):
         self = GekkoMinimumTimeToPosition.inject_position_objectives(self, self.finalConditions)
 
+class RollingOptimizer(GEKKO):
+    def __init__(self, ic: Conditions, fc: Conditions, num_nodes = 11):
+        super().__init__(remote=False)
+        self.initialConditions = ic
+        self.finalConditions = fc
+        self.car = GekkoDrivingCarState()
+        self.ball = GekkoBallRollingState()
+        
+        # Setting Options first fixed no solution bug!!!
+        self.set_options()
 
+        # Time variables for simulation
+        # tf: final time variable to optimize for minimizing final time
+        # time: normalized time vector with num_nodes discretations
+        self.tf = self.FV(value = 1, lb=1, ub=10, name='tf')
+        self.tf.STATUS = 1 # Let optimizer adjust tf
+        self.time = np.linspace(0, 1, num_nodes)
+
+        self.p_d = np.zeros(num_nodes)
+        self.p_d[-1] = 1.0
+        self.final = self.Param(value = self.p_d, name='final')
+
+
+        self.set_all_equations()
+        self.set_objectives(fc)
+
+    def set_options(self):
+        self.options.NODES=3
+        self.options.SOLVER=3
+        self.options.IMODE=6
+        self.options.MAX_ITER=800
+        self.options.MV_TYPE = 0
+        # self.options.DIAGLEVEL=1
+
+    def set_all_equations(self):
+        self = self.car.inject_variables(self)
+        self = self.car.inject_dynamics(self)
+        self = self.ball.inject_variables(self)
+        self = self.ball.inject_dynamics(self)
+
+    def set_objectives(self, fc):
+        self = GekkoOptimalDefend.inject_objectives(self)
 
 class GekkoVector():
     def init(self, o:Optimizer, x=0, y=0, z=0, prefix=''):
@@ -107,10 +149,10 @@ class GekkoQuaternion():
         pass
 
 class GekkoRotation():
-    def init(self, o: Optimizer, r=0, p=0, y=0):
-        self.roll = o.Var(value = r, name='roll')
-        self.pitch = o.Var(value = p, name='pitch')
-        self.yaw = o.Var(value = y, name='yaw')
+    def init(self, o: Optimizer, r=0, p=0, y=0, name=''):
+        self.roll = o.Var(value = r, name=name + 'roll')
+        self.pitch = o.Var(value = p, name=name + 'pitch')
+        self.yaw = o.Var(value = y, name=name + 'yaw')
         return o
 
 # GEKKO State Equations and Variables
@@ -159,7 +201,7 @@ class GekkoDrivingCarState(GekkoState):
     
         # State variables
         self.pos = GekkoVector()
-        o = self.pos.init(o, s.x, s.y, s.z, prefix='')
+        o = self.pos.init(o, s.x, s.y, s.z, prefix='s')
         self.vel = GekkoVector()
         o = self.vel.init(o, v.x, v.y, v.z, prefix='v')
         self.v_mag = o.Var(value = v_mag, ub = 2300, lb=0, name='v_mag')
@@ -213,6 +255,36 @@ class GekkoDrivingCarState(GekkoState):
 class GekkoBallState(GekkoState):
     pass
 
+class GekkoBallRollingState(GekkoState):
+    def __init__(self):
+        self.D_b = -0.0305 # Air drag parameter on ball
+
+        pass
+    
+    def inject_variables(self, o: Optimizer):
+        s = o.initialConditions.bs
+        v = o.initialConditions.bv
+        # w = o.initialConditions.w
+    
+        # State variables
+        self.pos = GekkoVector()
+        o = self.pos.init(o, s.x, s.y, s.z, prefix='bs')
+        self.vel = GekkoVector()
+        o = self.vel.init(o, v.x, v.y, v.z, prefix='bv')
+
+        return o
+       
+
+
+    def inject_dynamics(self, o: Optimizer):
+        o.Equation(self.vel.x.dt()/o.tf == self.D_b*self.vel.x)
+        o.Equation(self.vel.y.dt()/o.tf == self.D_b*self.vel.y)
+        o.Equation(self.pos.x.dt()/o.tf == self.vel.x)
+        o.Equation(self.pos.y.dt()/o.tf == self.vel.y)
+        o.Equation(self.pos.z.dt()/o.tf == 0.0)    
+
+        return o 
+
 class GekkoMinimumTimeToPosition(GekkoObjective):
     @staticmethod
     def inject_position_objectives(o: Optimizer, final_state: CarState):
@@ -234,3 +306,12 @@ class GekkoMinimumTimeToBouncingBall(GekkoObjective):
     @staticmethod
     def inject_objectives(o: Optimizer):
         pass
+
+class GekkoOptimalDefend(GekkoObjective):
+    @staticmethod
+    def inject_objectives(o: Optimizer):
+        o.Minimize(o.tf * 1e3)
+        o.Minimize(o.final * 1e8 * ((o.car.pos.x - o.ball.pos.x)**2))        
+        o.Minimize(o.final * 1e8 * ((o.car.pos.y - o.ball.pos.y)**2))
+        # o.Maximize(o.final * (o.car.v_mag**2))
+        o.Minimize(o.final * (((np.pi/2) - o.car.orientation.yaw)**2) * 1e6)

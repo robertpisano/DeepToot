@@ -21,8 +21,8 @@ def plot_car(o: Optimizer):
     ax3d1.set_xlabel('x')
     ax3d1.set_ylabel('y')
     ax3d1.set_zlabel('z')
-    ax3d1.set_xlim3d(-1000, 1000)
-    ax3d1.set_ylim3d(-1000, 1000)
+    ax3d1.set_xlim3d(-2000, 2000)
+    ax3d1.set_ylim3d(-2000, 2000)
     ax3d1.set_zlim3d(0, o.tf.value[0])
 
     # Plot velocity of plot
@@ -56,7 +56,7 @@ def plot_car(o: Optimizer):
     plt.ylabel('kv vs ka')
     
 def plot_ball(o: Optimizer):
-    Axes3D.plot(ax3d1, o.ball.x, o.ball.y, o.ball.z, c = 'b', marker = '*')
+    Axes3D.plot(ax3d1, o.ball.pos.x, o.ball.pos.y, o.time*o.tf, c = 'b', marker = '*')
 
 def show():
     # plt.ion()
