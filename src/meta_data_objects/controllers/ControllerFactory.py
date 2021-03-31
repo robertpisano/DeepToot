@@ -21,7 +21,8 @@ from DeepToot.src.meta_data_objects.controllers.OpenLoopAerialController import 
 from marshmallow import Schema, fields, post_load
 
 class ControllerFactory:
-    list = {'AerialController':AerialController, 'DrivingController':DrivingController, 'TPNDrivingController':TPNDrivingController}
+    list = {'AerialController':AerialController, 'DrivingController':DrivingController, 'TPNDrivingController':TPNDrivingController,
+            'OpenLoopAerialController':OpenLoopAerialController}
 
     @staticmethod
     def create(key, **kwargs):

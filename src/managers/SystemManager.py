@@ -26,6 +26,7 @@ from DeepToot.src.data_generation.game_trajectory_builder import GameTrajectoryB
 from DeepToot.src.meta_data_objects.SerializationFactory import SerializationFactory
 
 
+from rlbot.utils.structures.game_data_struct import GameTickPacket
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 from rlbot.utils.game_state_util import GameState, BallState, CarState, Physics, Vector3, Rotator, GameInfoState
 
@@ -73,7 +74,7 @@ class SystemManager(Server):
         # Reset started flag
         self.started=False
 
-    def run_bot(self, packet, rigid_packet, bot):
+    def run_bot(self, packet: GameTickPacket, rigid_packet, bot):
         # Check msg_queue
         try:
             msg = self.msg_queue.get(block=False)
@@ -91,6 +92,9 @@ class SystemManager(Server):
         if(self.execute == True):
             # Initialize if necessary
             if(not self.initialized): 
+                # Do pre-calculations
+                self.brain.calculate(self.initialCondition)
+                self.drivingController.set_t0(packet.game_info.seconds_elapsed)
                 self.initialize_game_state(bot)
                 self.initialized = True
 
@@ -132,9 +136,9 @@ class SystemManager(Server):
             from DeepToot.src.meta_data_objects.InitialConditions.InitialConditionsFactory import InitialConditionsFactory, InitialConditionsSchema
             from DeepToot.src.dynamic_class_util.dynamic_class import TestClass
             self.test = TestClass()
-            self.drivingController = ControllerFactory.create('TPNDrivingController')
+            self.drivingController = ControllerFactory.create('OpenLoopDrivingController')
             self.aerialController = ControllerFactory.create(self.object_types['ac'])
-            self.brain = BrainFactory.create(self.object_types['brain'])
+            self.brain = BrainFactory.create('MinimumTimeToBall')
             self.initialConditions = InitialConditionsFactory.create('InitialConditionsGekko')
             # print(self.test.val)
             pass
