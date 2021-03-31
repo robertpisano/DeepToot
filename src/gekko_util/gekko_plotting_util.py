@@ -55,9 +55,57 @@ def plot_car(o: Optimizer):
     plt.plot(o.car.kv_fine, o.car.ka_fine, 'r-')
     plt.ylabel('kv vs ka')
     
+def plot_cars(o: Optimizer):
+    # Plot 3d position of ball and car on fig1
+    Axes3D.plot(ax3d1, o.c1.pos.x, o.c1.pos.y, o.time*o.tf1, c = 'r', marker = '^')
+    plt.draw()
+    Axes3D.plot(ax3d1, o.c2.pos.x, o.c2.pos.y, o.time*o.tf2, c = 'g', marker = '^')
+    # Limits
+    ax3d1.set_xlabel('x')
+    ax3d1.set_ylabel('y')
+    ax3d1.set_zlabel('t')
+    ax3d1.set_xlim3d(-2000, 2000)
+    ax3d1.set_ylim3d(-2000, 2000)
+    ax3d1.set_zlim3d(0, max(o.tf1.value[0], o.tf2.value[0]))
+
+    # Plot velocity of plot
+    Axes3D.plot(ax3d2, o.c1.vel.x, o.c1.vel.y, o.time*o.tf1, c = 'r', marker = '^')
+    plt.draw()
+    Axes3D.plot(ax3d2, o.c2.vel.x, o.c2.vel.y, o.time*o.tf2, c = 'g', marker = '^')
+    # Limits
+    ax3d2.set_xlabel('x')
+    ax3d2.set_ylabel('y')
+    ax3d2.set_zlabel('t')
+    ax3d2.set_xlim3d(-1000, 1000)
+    ax3d2.set_ylim3d(-1000, 1000)
+    ax3d2.set_zlim3d(0, max(o.tf1.value[0], o.tf2.value[0]))
+
+    # ts = o.time * o.tf
+    # fig4
+    # num_plots = 4
+    # plt.subplot(num_plots,1,1)
+    # plt.plot(ts, o.car.a, 'r-')
+    # plt.ylabel('acceleration')
+
+    # plt.subplot(num_plots,1,2)
+    # plt.plot(ts, o.car.orientation.yaw, 'r-')
+    # # plt.plot(ts, o.car.ang_vel.z, 'b-')
+    # plt.ylabel('yaw orientation (red), yaw_dot (blue)')
+
+    # plt.subplot(num_plots, 1, 3)
+    # plt.plot(ts, o.car.v_mag, 'b-')
+    # plt.ylabel('vmag')
+
+    # plt.subplot(num_plots, 1, 4)
+    # plt.plot(o.car.kv_fine, o.car.ka_fine, 'r-')
+    # plt.ylabel('kv vs ka')
+
 def plot_ball(o: Optimizer):
     Axes3D.plot(ax3d1, o.ball.pos.x, o.ball.pos.y, o.time*o.tf, c = 'b', marker = '*')
 
+def plot_balls(o:Optimizer):
+    Axes3D.plot(ax3d1, o.ball.bs1[0], o.ball.bs1[1], o.time*o.tf1, c = 'b', marker = 'o')
+    Axes3D.plot(ax3d1, o.ball.bs2[0], o.ball.bs2[1], o.time*o.tf2, c = 'c', marker = 'o')
 def show():
     # plt.ion()
     plt.show(block=True)
