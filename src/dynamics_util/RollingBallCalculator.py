@@ -1,11 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
-class BouncingBallCalculator:
+class RollingBallCalculator:
     def __init__(self, state0, tf, dt):
         self.D_b = -0.0305
-        self.g = -680
-        self.e=0.8
         self.hit_ground.terminal=True
         self.hit_ground.direction=-1
         self.tn = 0
@@ -22,14 +20,13 @@ class BouncingBallCalculator:
         tf = self.tf
 
         while(True):
-            sol = solve_ivp(self.f, [tn, tf], sn, events = BouncingBallCalculator.hit_ground, max_step = self.dt)
+            sol = solve_ivp(self.f, [tn, tf], sn, max_step = self.dt)
             # append
             t = np.append(t, sol.t[:-2])
             state = np.append(state, sol.y[:,:-2], axis=1)
             # update next iteration values
             tn = sol.t[-1]
             sn = sol.y[:,-1]
-            sn[5] *= -1*self.e
             
             print(sol.t[-1])
             # check if at tf
@@ -42,7 +39,7 @@ class BouncingBallCalculator:
 
 
     def f(self, t, state):
-        return [state[3], state[4], state[5], state[3]*self.D_b, state[4]*self.D_b, self.g + state[5]*self.D_b]
+        return [state[3], state[4], 0, state[3]*self.D_b, state[4]*self.D_b, 0]
     
     @staticmethod
     def hit_ground(t, state):
@@ -82,7 +79,7 @@ if __name__ == '__main__':
     state0 = np.array([-100,-200,1000,100,200,1000])
     dt = 0.1
     tf = 14
-    bc = BouncingBallCalculator(state0, tf, dt)
+    bc = RollingBallCalculator(state0, tf, dt)
     bc.calculate()
     # bc.trajectory.pos[:][2] = 0
     plot(bc)
