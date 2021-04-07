@@ -1,10 +1,12 @@
 from rlbot.utils.structures.game_data_struct import GameTickPacket
 from DeepToot.src.data_generation.entities.state.ball_state import BallState
 from DeepToot.src.data_generation.entities.state.car_state import CarState
+from DeepToot.src.gekko_util.gekko_util import AerialOptimizer
 import pandas as pd
 import numpy as np
 from DeepToot.src.data_generation.entities.physics.base_3d_vector import Base3DVector
 from pyquaternion import Quaternion
+
 
 # StateTransformer will convert "raw data" types (ex: GameTickPacket, pandas.DataFrame) into 
 # respective state class for the trajectory builder
@@ -72,6 +74,33 @@ class StateTransformer():
             has_double_jumped = None, 
             boost_amount = None)    
 
+    @staticmethod
+    def from_gekko_solver_to_car_state(o: AerialOptimizer, i: int):
+        pos = np.array([o.car.pos.x[i], o.car.pos.y[i],o.car.pos.z[i]])
+        vel = np.array([o.car.vel.x[i], o.car.vel.y[i],o.car.pos.z[i]])
+        quat = np.array([o.car.q_norm[0][i], o.car.q_norm[1][i], o.car.q_norm[2][i], o.car.q_norm[3][i]])
+        ang_vel = np.array([o.car.ang_vel.x[i], o.car.ang_vel.y[i],o.car.ang_vel.z[i]])
+        return CarState(position = pos,
+            velocity = vel,
+            ang_vel = ang_vel,
+            orientation = quat,
+            time = o.time[i]*o.tf.value[0],
+            hit_box = None,
+            is_demolished = None,
+            has_wheel_contact = None,
+            is_super_sonic = None, 
+            has_jumped = None, 
+            has_double_jumped = None, 
+            boost_amount = None)    
+    @staticmethod
+    def from_gekko_solver_to_ball_state(o: AerialOptimizer, i: int):
+        pos = np.array([o.ball.pos.x[i], o.ball.pos.y[i],o.ball.pos.z[i]])
+        vel = np.array([o.ball.vel.x[i], o.ball.vel.y[i],o.ball.pos.z[i]])
+        return BallState(position = pos,
+                        velocity = vel,
+                        ang_vel = 0.0,
+                        orientation = 0.0,
+                        time = o.time[i]*o.tf.value[0])
 
 if __name__ == "__main__":
     s = StateTransformer()

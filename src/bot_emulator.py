@@ -6,7 +6,7 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket
 
 from rlbot.utils.structures.rigid_body_struct import RigidBodyTick
 from DeepToot.src.comms_util.comms_protocol import CommsProtocol
-
+import traceback
 class SocketTestBot(BaseAgent, SystemManager):
     # manager = SystemManager(index = 0, ip = '127.0.0.1', port = 5050)
     
@@ -16,10 +16,11 @@ class SocketTestBot(BaseAgent, SystemManager):
     
     def get_output(self, game_tick_packet):
         try:
-            controllerstate = self.run_bot(packet=RigidBodyTick(), bot=self)
+            controllerstate = self.run_bot(packet = game_tick_packet, rigid_packet=RigidBodyTick(), bot=self)
         except:
             # Reset manager
             # self.manager = SystemManager(index = self.index, ip = '127.0.0.1', port = 5050)
+            traceback.print_exc()
             controllerstate = SimpleControllerState()
 
         return controllerstate

@@ -4,6 +4,7 @@ from DeepToot.src.meta_data_objects.MetaDataObject import MetaDataObject
 from gekko import GEKKO
 from DeepToot.src.meta_data_objects.InitialConditions.InitialConditions import InitialConditions
 from rlbot.utils.game_state_util import Vector3, Physics, Rotator
+import numpy as np
 
 class InitialConditionsGekko(InitialConditions):
     params: dict
@@ -36,6 +37,27 @@ class InitialConditionsGekko2(InitialConditions):
                         'wxi':0.0, 'wyi':0.0, 'wzi':0.0, 
                         'bxi':0.0, 'byi':0.0, 'bzi':0.0,
                         'bvxi':0.0, 'bvyi':0.0, 'bvzi':0.0,
+                        'broll':0.0, 'bpitch':0.0, 'byaw':0.0,
+                        'bwxi':0.0, 'bwyi':0.0, 'bwzi':0.0,
+                        'sxf':0.0, 'syf':0.0, 'szf':0.0,
+                        'v_magf':0.0, 'vyf':0.0, 'vzf':0.0,
+                        'rollf':0.0, 'pitchf':0.0, 'yawf':0.0
+                        }
+        self.miscOptions = {}
+        pass
+
+class AerialInitialConditionsGekko(InitialConditions):
+    params: dict
+    miscOptions: dict
+    name = 'InitialConditionsGekko'
+    def __init__(self):
+        self.params = {'sxi':1000.0, 'syi':-2000.0, 'szi':138.0, 
+                        'vx':-100, 'vy':900, 'vz':631.0, 
+                        'rolli':-100.0, 'pitchi':0.4, 'yawi':np.pi/2, 
+                        'qw':1.0, 'qi':0.0, 'qj':0.0, 'qk':0.0,
+                        'wxi':2.0, 'wyi':0.0, 'wzi':0.0, 
+                        'bxi':-2000.0, 'byi':2500.0, 'bzi':200.0,
+                        'bvxi':800.0, 'bvyi':0.0, 'bvzi':1300.0,
                         'broll':0.0, 'bpitch':0.0, 'byaw':0.0,
                         'bwxi':0.0, 'bwyi':0.0, 'bwzi':0.0,
                         'sxf':0.0, 'syf':0.0, 'szf':0.0,

@@ -135,9 +135,7 @@ class AerialOptimizer():
             self.bvy = self.d.Var(value = ball.velocity[1])
             self.bvz = self.d.Var(value = ball.velocity[2])
 
-            # variables intial conditions are placed here
-                # Position and Velocity in 2d
-
+            #Position variables
             self.sx = self.d.Var(value=car.position[0], lb=-4096, ub=4096) #x position
             self.sy = self.d.Var(value=car.position[1], lb=-5120, ub=5120) #y position
             self.sz = self.d.Var(value = car.position[2], lb = 0, ub = 2000)

@@ -37,6 +37,8 @@ class Conditions():
         bv = Vector3(float(i['bvxi']), float(i['bvyi']), float(i['bvzi']))
         condit = Conditions(s=s, v_mag=v, r=r, bs=bs, bv=bv)
         return condit
+    
+
 
     @staticmethod
     def build_final_from_initial_conditions_object(fc: InitialConditionsGekko):
@@ -46,6 +48,54 @@ class Conditions():
         r = Rotator(float(i['rollf']), float(i['pitchf']), float(i['yawf']))
         condit = Conditions(s=s, v_mag=v, r=r)
         return condit
+class AerialConditions():
+    def __init__(self, s=Vector3(0,0,0), v=Vector3(0,0,0), r=Rotator(0,0,0), w=Vector3(0,0,0), bs=Vector3(0,0,0), bv=Vector3(0,0,0), br=Rotator(0,0,0), bw=Vector3(0,0,0)):
+        # Set car state stuff
+        self.s = s
+        self.v = v
+        self.r = r
+        self.w = w
+        _, self.q = AerialConditions.euler_to_left_handed_rotation_and_quaternion(r)
+
+        self.bs = bs
+        self.bv = bv
+        self.br = br
+        self.bw = bw
+
+    #TODO: Needed one that had velocity as magnitude, and needed one that had velocity in component form
+    @staticmethod
+    def build_initial_from_initial_conditions_object(ic: InitialConditionsGekko):
+        i = ic.params
+        s = Vector3(float(i['sxi']), float(i['syi']), float(i['szi']))
+        v = Vector3(float(i['vx']), float(i['vy']), float(i['vz']))
+        r = Rotator(roll=float(i['rolli']), pitch=float(i['pitchi']), yaw=float(i['yawi']))
+        bs = Vector3(float(i['bxi']), float(i['byi']), float(i['bzi']))
+        bv = Vector3(float(i['bvxi']), float(i['bvyi']), float(i['bvzi']))
+        condit = AerialConditions(s=s, v=v, r=r, bs=bs, bv=bv)
+        return condit
+
+    @staticmethod
+    def build_final_from_initial_conditions_object(fc: InitialConditionsGekko):
+        i = fc.params
+        s = Vector3(float(i['sxf']), float(i['syf']), float(i['szf']))
+        v = float(i['v_magf'])
+        r = Rotator(float(i['rollf']), float(i['pitchf']), float(i['yawf']))
+        condit = AerialConditions(s=s, v=v, r=r)
+        return condit
+
+    @staticmethod
+    def euler_to_left_handed_rotation_and_quaternion(orientation: Rotator):
+        r = -1*orientation.roll #rotation around roll axis to get car to world frame
+        p = -1*orientation.pitch #rotation around pitch axis to get car to world frame
+        y = orientation.yaw #rotation about the world z axis to get the car to the world frame
+        Rx = np.matrix([[1, 0, 0], [0, np.cos(r), np.sin(r)], [0, -1*np.sin(r), np.cos(r)]])
+        Ry = np.matrix([[np.cos(p), 0, -1*np.sin(p)], [0, 1, 0], [np.sin(p), 0, np.cos(p)]])
+        Rz = np.matrix([[np.cos(y), np.sin(y), 0], [-1*np.sin(y), np.cos(y), 0], [0, 0, 1]])
+        #Order of rotations from car to world is z then y then x
+        Rinter = np.matmul(Rz, Ry)
+        Rcar_to_world = np.matmul(Rinter, Rx)
+
+        return Rcar_to_world, Quaternion(matrix=Rcar_to_world)
 
 class Optimizer(GEKKO):
     def __init__(self, ic: Conditions, fc: Conditions, num_nodes = 51):
@@ -88,12 +138,12 @@ class Optimizer(GEKKO):
     def set_objectives(self, fc):
         self = GekkoMinimumTimeToPosition.inject_position_objectives(self, self.finalConditions)
 class AerialOptimizer(GEKKO):
-    def __init__(self, ic: Conditions, fc: Conditions, num_nodes = 51):
+    def __init__(self, ic: Conditions, fc: Conditions, num_nodes = 11):
         super().__init__(remote=False)
         self.initialConditions = ic
         self.finalConditions = fc
         self.car = GekkoFlyingCarState()
-        self.ball = GekkoBallState()
+        self.ball = GekkoAerialBallState()
         
         # Setting Options first fixed no solution bug!!!
         self.set_options()
@@ -101,7 +151,7 @@ class AerialOptimizer(GEKKO):
         # Time variables for simulation
         # tf: final time variable to optimize for minimizing final time
         # time: normalized time vector with num_nodes discretations
-        self.tf = self.FV(value = 1, lb=1, ub=100, name='tf')
+        self.tf = self.FV(value = 1, lb=0.1, ub=100, name='tf')
         self.tf.STATUS = 1 # Let optimizer adjust tf
         self.time = np.linspace(0, 1, num_nodes)
 
@@ -124,9 +174,16 @@ class AerialOptimizer(GEKKO):
     def set_all_equations(self):
         self = self.car.inject_variables(self)
         self = self.car.inject_dynamics(self)
+        self = self.ball.inject_variables(self)
+        self = self.ball.inject_dynamics(self)
 
     def set_objectives(self, fc):
-        self = GekkoMinimumTimeToPosition.inject_position_objectives(self, self.finalConditions)
+        self = GekkoMinimumTimeToBallInAir.inject_objectives(self)
+
+    # Update state with new initial conditions
+    def update_state(self, init: AerialConditions):
+        self.initialConditions = init
+        self.car.update_state(self)
 
 class RollingOptimizer(GEKKO):
     def __init__(self, ic: Conditions, fc: Conditions, num_nodes = 11):
@@ -319,10 +376,8 @@ class GekkoFlyingCarState(GekkoState):
     def inject_variables(self, o: Optimizer):
         s = o.initialConditions.s
         v = o.initialConditions.v
-        r = o.initialConditions.r
         q = o.initialConditions.q
         w = o.initialConditions.w
-        v_mag = o.initialConditions.v_mag
     
         # State variables
         self.pos = GekkoVector()
@@ -330,20 +385,21 @@ class GekkoFlyingCarState(GekkoState):
         
         self.vel = GekkoVector()
         o = self.vel.init(o, v.x, v.y, v.z, prefix='v')
-        
+
+        v_mag = np.linalg.norm([v.x, v.y, v.z])
         self.v_mag = o.Var(value = v_mag, ub = 2300, lb=0, name='v_mag')
         
         self.q = o.Array(o.Var, 4) #orientation quaternion
-        self.q[0].value = q.w
-        self.q[1].value = q.i
-        self.q[2].value = q.j
-        self.q[3].value = q.k
+        self.q[0].value = q[3]
+        self.q[1].value = q[0]
+        self.q[2].value = q[1]
+        self.q[3].value = q[2]
 
         self.q_norm = o.Array(o.Var, 4) #orientation quaternion
-        self.q_norm[0].value = q.w
-        self.q_norm[1].value = q.i
-        self.q_norm[2].value = q.j
-        self.q_norm[3].value = q.k
+        self.q_norm[0].value = q[3]
+        self.q_norm[1].value = q[0]
+        self.q_norm[2].value = q[1]
+        self.q_norm[3].value = q[2]
 
         # Intermediate value since rotating vector by quateiron requires q*v*q^-1 (this is q*v)
         ux = [0,1,0,0]
@@ -363,7 +419,7 @@ class GekkoFlyingCarState(GekkoState):
         o = self.ang_vel.init(o, w.x, w.y, w.z, prefix='w')
 
         # Control Input Variables
-        self.a = o.MV(fixed_initial=False, lb=0, ub=1, name='a') # Acceleration amount
+        self.a = o.MV(fixed_initial=False, lb=0, ub=1, name='a', integer=True) # Acceleration amount
         self.a.STATUS = 1
         o.free(self.a)
         # Torque input <Tx, Ty, Tz>, will change the q_omega[1:3] values since q_omega[0] is always zero in pure quaternion form
@@ -404,7 +460,7 @@ class GekkoFlyingCarState(GekkoState):
 
 
     def inject_dynamics(self, o: Optimizer):
-# Differental equations
+        # Differental equations
 
         # Heading equations assuming original heading vector is <1,0,0>
 
@@ -424,12 +480,12 @@ class GekkoFlyingCarState(GekkoState):
         # There is also a damper component to the rotataion dynamics, for pitch and yaw, the dampening effect is altered by the input value of that
         # rotational input, and requres an absoulte value but to make calculation converge better I tried sqrt(var^2) instead of the absoulte value
         # Since absoulte value would require me to move to integer type soltuion
-        o.Equation(self.q_omega[1].dt() == o.tf * ((self.alpha[0] * self.T_r) + (self.q_omega[1]*self.D_r)))
-        o.Equation(self.q_omega[2].dt() == o.tf * ((self.alpha[1] * self.T_p) + (self.q_omega[2]*self.D_p * (1-o.sqrt(self.alpha[1]*self.alpha[1])))))
-        o.Equation(self.q_omega[3].dt() == o.tf * ((self.alpha[2] * self.T_y) + (self.q_omega[3]*self.D_y * (1-o.sqrt(self.alpha[2]*self.alpha[2])))))
-        # o.Equation(self.q_omega[1].dt() == self.tf * (0.5 * self.alpha[0] * self.T_r)) # I'm multiplying the acceleration output by 0.5 to keep paths reachable by feedback controller only
-        # o.Equation(self.q_omega[2].dt() == self.tf * (0.5 * self.alpha[1] * self.T_p))
-        # o.Equation(self.q_omega[3].dt() == self.tf * (0.5 * self.alpha[2] * self.T_y))
+        # o.Equation(self.q_omega[1].dt() == o.tf * ((self.alpha[0] * self.T_r) + (self.q_omega[1]*self.D_r)))
+        # o.Equation(self.q_omega[2].dt() == o.tf * ((self.alpha[1] * self.T_p) + (self.q_omega[2]*self.D_p * (1-o.sqrt(self.alpha[1]*self.alpha[1])))))
+        # o.Equation(self.q_omega[3].dt() == o.tf * ((self.alpha[2] * self.T_y) + (self.q_omega[3]*self.D_y * (1-o.sqrt(self.alpha[2]*self.alpha[2])))))
+        o.Equation(self.q_omega[1].dt() == o.tf * (self.alpha[0] * self.T_r)) # I'm multiplying the acceleration output by 0.5 to keep paths reachable by feedback controller only
+        o.Equation(self.q_omega[2].dt() == o.tf * (self.alpha[1] * self.T_p))
+        o.Equation(self.q_omega[3].dt() == o.tf * (self.alpha[2] * self.T_y))
 
 
         # Get unit vector pointing in heading direction (hi is q*v, this is (q*v)*q^-1) Thats why it has negatives on q_norm[1,2,3]
@@ -463,9 +519,39 @@ class GekkoFlyingCarState(GekkoState):
 
         return o 
 
+    def update_state(self, o: Optimizer):
+        pass
 
 class GekkoBallState(GekkoState):
     pass
+class GekkoAerialBallState(GekkoState):
+    def __init__(self):
+        self.D_b = -0.0305 # Air drag parameter on ball
+        self.g = -650 # Gravity
+
+    def inject_variables(self, o: Optimizer):
+        s = o.initialConditions.bs
+        v = o.initialConditions.bv
+    
+        # State variables
+        self.pos = GekkoVector()
+        o = self.pos.init(o, s.x, s.y, s.z, prefix='bs')
+        self.vel = GekkoVector()
+        o = self.vel.init(o, v.x, v.y, v.z, prefix='bv')
+
+        return o
+       
+
+
+    def inject_dynamics(self, o: Optimizer):
+        o.Equation(self.vel.x.dt()/o.tf == self.D_b*self.vel.x)
+        o.Equation(self.vel.y.dt()/o.tf == self.D_b*self.vel.y)
+        o.Equation(self.vel.z.dt()/o.tf == self.D_b*self.vel.z + self.g)
+        o.Equation(self.pos.x.dt()/o.tf == self.vel.x)
+        o.Equation(self.pos.y.dt()/o.tf == self.vel.y)
+        o.Equation(self.pos.z.dt()/o.tf == self.vel.z)    
+
+        return o
 class GekkoBallSplineState(RollingBallCalculator, GekkoState):
     def __init__(self):
         pass
@@ -571,8 +657,34 @@ class GekkoOptimalDefend(GekkoObjective):
         o.Minimize(o.final * (((np.pi/2) - o.car.orientation.yaw)**2) * 1e6)
 
 class GekkoMinimumTimeToBallInAir(GekkoObjective):
-    pass
+    @staticmethod
+    def inject_objectives(o: Optimizer):
+        # Goal positoin
+        gx = 0
+        gy = 5120
+        gz = 320
+        # Goal shoot vector
+        shotx = o.Intermediate(equation = gx - o.ball.pos.x)
+        shoty = o.Intermediate(equation = gy - o.ball.pos.y)
+        shotz = o.Intermediate(equation = gz - o.ball.pos.z)
+        shotmag = o.Intermediate(equation = o.sqrt((o.ball.pos.x)**2 + ((o.ball.pos.y)**2) + ((o.ball.pos.z)**2)))
+        # Goal shoot normal vector
+        nshotx = o.Intermediate(equation = shotx/shotmag)
+        nshoty = o.Intermediate(equation = shoty/shotmag)
+        nshotz = o.Intermediate(equation = shotz/shotmag)
+        # Car's normal velocity  vector
+        nvelx = o.Intermediate(equation = o.car.vel.x/o.car.v_mag)
+        nvely = o.Intermediate(equation = o.car.vel.y/o.car.v_mag)
+        nvelz = o.Intermediate(equation = o.car.vel.z/o.car.v_mag)
 
+        o.Minimize(o.tf * 1e6)
+        o.Minimize(o.final * 1e4 * ((o.car.pos.x - o.ball.pos.x)**2))
+        o.Minimize(o.final * 1e4 * ((o.car.pos.y - o.ball.pos.y)**2))
+        o.Minimize(o.final * 1e4 * ((o.car.pos.z - o.ball.pos.z)**2))
+        # Dot product between ball to goal, and car's velocity, both normalized
+        # Maximizing so that they're in line with each other
+        o.Maximize(o.final * 1e8 * ((nvelx*nshotx + nvely*nshoty + nvelz*nshotz)))
+        
 class GekkoMinimumTimeComparison(GekkoObjective):
     @staticmethod
     def inject_objectives(o: Optimizer):
