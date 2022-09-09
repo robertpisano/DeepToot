@@ -5,12 +5,13 @@ import numpy as np
 import pandas as pd
 import os
 import DeepToot
+from DeepToot.src.data_generation.entities.neural_net.neural_net_package_factory import NeuralNetPackageFactory
 from DeepToot.src.data_generation.game_trajectory_builder import GameTrajectoryBuilder
-from DeepToot.src.data_generation.state_transformer import StateTransformer
+from DeepToot.src.data_generation.entities.state.state_transformer import StateTransformer
 from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
+from DeepToot.src.data_generation.entities.state.ball_state import BallStateBuilder
+from DeepToot.src.data_generation.entities.state.car_state import CarStateBuilder
 from DeepToot.src.repositories.neural_net_model_repository import NeuralNetModelRepository
-from DeepToot.src.data_generation.entities.neural_net.controller_state.controller_state_neural_net_model import ControllerStateNeuralNetModel
-
 class ControllerStateTrainer:
     None
 
@@ -29,42 +30,21 @@ if __name__ == "__main__":
     # the car's coordinate system. Angular velocity should not be effected numerically.
     for index in range(0, data_frames_length):
         for i in range(0, traj_length):
-            gtb.add_bot_state(
-                StateTransformer.from_pandas_frame_to_car_state(dataframe.iloc[index+i])
+            gtb.add_game_state(
+                bot_state = StateTransformer.from_pandas_frame_to_car_state(dataframe.iloc[index+i]),
+                ball_state = BallStateBuilder().build(),
+                car_state = CarStateBuilder().build()
             )
-        gtb.zero_fill_unneeded_queues()
-        gtb.build() #BUild trajectory
-    
-        # make a state vector buffer from game trajectory builder
-        state_buff = [gtb.bot_queue[1].time, gtb.bot_queue[1].position.x(), gtb.bot_queue[1].position.y(), gtb.bot_queue[1].velocity.x(), gtb.bot_queue[1].velocity.y(), gtb.bot_queue[1].ang_vel.z(),
-                        gtb.bot_queue[2].time, gtb.bot_queue[2].position.x(), gtb.bot_queue[2].position.y(), gtb.bot_queue[2].velocity.x(), gtb.bot_queue[2].velocity.y(), gtb.bot_queue[2].ang_vel.z()]
-        
-        # output data vector buffer
-        control_buff = [dataframe.loc[index, 'controller_throttle'], dataframe.loc[index, 'controller_steer'], dataframe.loc[index, 'controller_boost']]
-        
-        # Fill the elements of the in_data, out_data arrays
-        if index == 0: # Initialize in_data and out_data as empty arrays with proper size
-            in_data = np.empty(shape = (data_frames_length, len(state_buff)))
-            out_data = np.empty(shape = (data_frames_length, len(control_buff)))
-        # Fill the arrays
-        for j, elem in enumerate(state_buff):
-            in_data[index][j] = elem
-        for k, celem in enumerate(control_buff): 
-            out_data[index][k] = celem
 
-    # Initialize Controller State NN
-    simp = ControllerStateNeuralNetModel(2)
+        neural_net_package = NeuralNetPackageFactory(game_trajectory = gtb.build()).create("controller", params={length:2})
+        neural_net_package.model.fit(
+            neural_net_package.transformer.pandas_to_label(), 
+            neural_net_packate.transformer.pandas_to_feature(), 
+            epochs=200, 
+            batch_size=100
+        )
+        NeuralNetModelRepository(model=neural_net_package.model).save()
 
-    # Fit neural net to data
-    simp.fit(in_data, out_data, epochs=200, batch_size=100)
-    print("was actually able to fit the model....")
-    print("model layers")
-    print(simp.layers)
-    repository = NeuralNetModelRepository(model = simp)
-    repository.save()
-    print("serializeddd")
-    loaded_model = repository.load()
-    print("loaded model")
 
     # Comparing traned label with a predicted label from two random consecutive states
     test_index = 81

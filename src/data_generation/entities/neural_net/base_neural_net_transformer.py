@@ -16,7 +16,7 @@ class BaseNeuralNetTransformer():
         self.game_trajectory = game_trajectory
         self.neural_net_model = neural_net_model
 
-    def from_game_trajectrory_to_numpy_array(self, game_trajectory: GameTrajectory):
+    def from_game_trajectrory_to_numpy_array(self):
         """
         Returns:
             Matrix of the shape self.neural_net_model.input_shape, output_shape

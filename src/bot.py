@@ -11,10 +11,9 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket
 # from rlbot.utils.game_state_util import BallState
 
 from DeepToot.src.data_generation.entities.physics.game_trajectory import GameTrajectory
-from DeepToot.src.data_generation.game_trajectory_builder import GameTrajectoryBuilder
-from DeepToot.src.data_generation.state_transformer import StateTransformer
-from DeepToot.src.data_generation.simple_controller_state_generator import SimpleControllerStateGenerator
-
+from DeepToot.src.data_generation.entities.physics.game_trajectory_builder import GameTrajectoryBuilder
+from DeepToot.src.data_generation.state.state_transformer import StateTransformer
+from DeepToot.src.data_generation.entities.neural_net.neural_net_package_factory import NeuralNetPackageFactory
 
 class MyBot(BaseAgent):
     game_trajectory_builder = None
@@ -29,9 +28,31 @@ class MyBot(BaseAgent):
         self.game_trajectory_builder.add_game_state(ball_state = StateTransformer.from_game_tick_packet_to_ball_state(packet=packet),
                                                     bot_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.index),
                                                     opp_state = StateTransformer.from_game_tick_packet_to_car_state(packet=packet, index = self.opp_index))
-        game_trajectory = self.game_trajectory_builder.build()
-        self.controller_state = self.simple_controller_state_generator.generate_controller_state(game_trajectory=game_trajectory) # Set controller state to null state
-        return self.controller_state
+
+        neural_net_package = NeuralNetFactory(game_trajectory=self.game_trajectory_builder.build()).create(model_type="controller")
+        model_input = neural_net_package.transformer.from_game_trajectory_to_numpy_array()
+        model_output = neural_net_package.model.predict(model_input)
+
+        return self.generate_controller_state(model_ouput)
+
+    def generate_controller_state(self, output):
+        """[summary]
+
+        Args:
+            game_trajectory (GameTrajectory): [description]
+
+        Returns:
+            SimpleControllerState: the predicted controller inputs for motion
+        """        
+        return SimpleControllerState(steer = 0.0,
+                                    throttle = output,
+                                    pitch = 0.0,
+                                    yaw = 0.0,
+                                    roll = 0.0,
+                                    jump = False,
+                                    boost = False,
+                                    handbrake = False,
+                                    use_item = False)
 
     def get_opponent_index(self):
         """ONLY WORKS FOR 1V1

@@ -3,3 +3,4 @@ rocket-league-replays/
 __pycache__/
 RLBOT/rlbot.cfg
 SavedModels/
+SavedData/

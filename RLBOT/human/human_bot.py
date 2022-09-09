@@ -54,7 +54,9 @@ class Agent(BaseAgent):
         #     user_paths = []
 
         if(controller_output.save_data):
-            data_path = os.path.dirname(DeepToot.__file__) + "\SavedData\stupid.csv"
+            data_path = os.path.dirname(DeepToot.__file__) + "\SavedData\\"
+            if not os.path.exists(data_path): os.mkdir(data_path) 
+            data_path = data_path + "\stupid.csv"
             self.dataframe.to_csv(data_path)
             print("saved_training_data_betch")
 

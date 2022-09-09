@@ -54,16 +54,13 @@ class GameTrajectoryBuilder():
         self.add_bot_state(bot_state)
         self.add_opp_state(opp_state)
 
-    def zero_fill_unneeded_queues(self):
-        self.are_unneeded_queues_zero_filled = True
-
     def build(self):
         """build a GameTrajectory
 
         Args:
             length (int): injected length from neural network arch
         """        
-        if((len(self.ball_queue) == len(self.bot_queue)) and (len(self.bot_queue) == len(self.opp_queue)) or self.are_unneeded_queues_zero_filled):
+        if((len(self.ball_queue) == len(self.bot_queue)) and (len(self.bot_queue) == len(self.opp_queue))):
             ball_trajectory = Trajectory(state_array = self.ball_queue)
             bot_trajectory = Trajectory(state_array = self.bot_queue)
             opp_trajectory = Trajectory(state_array = self.opp_queue)
