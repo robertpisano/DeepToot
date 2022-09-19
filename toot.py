@@ -1,16 +1,15 @@
 
-print('workeds')
 import sys
-print(sys.argv)
+import pdb
+from DeepToot.src.data_generation.ball_chasing_replay_api import BallChasingReplayAPI
 from DeepToot.src.data_generation.replay_transformer import ReplayTransformer
-import DeepToot.src.data_generation.NeuralNetworkDataGenerator as nndg
-from DeepToot.src.data_generation.NeuralNetworkDataGenerator import DataAnalyzer
+
 #Commands for CLI
 
 try:
     # Download .replay files
     if sys.argv[1] == 'download':
-        ReplayTransformer().download_all()
+        BallChasingReplayAPI().download_all()
 
     # Convert .replay --> rawdataframes and save
     if sys.argv[1] == 'convert':        
@@ -53,13 +52,3 @@ try:
 
 except Exception as e:
     print(e)
-
-
-# Strictly so i can run breakpoints for debugging. while in CLI it doesn't seem to run breakpoints
-if __name__ == "__main__":
-    try:
-        from RLBOT.src.NeuralNetworkDataGenerator import DataAnalyzer
-        analyzer = DataAnalyzer()
-        analyzer.full_analysis()
-    except Exception as e:
-        print(e)

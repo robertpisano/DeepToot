@@ -7,9 +7,6 @@ import DeepToot
 
 
 class Agent(BaseAgent):
-
-
-
     def initialize_agent(self):
         # This runs once before the bot starts up
         # self.controller_state = SimpleControllerState()
@@ -31,6 +28,8 @@ class Agent(BaseAgent):
         p = game_tick_packet.game_cars[self.index].physics
         controller_output = controller.get_output()  
 
+        print(game_tick_packet)
+        exit()
         if(controller_output.throttle > 0):
             self.ping_flag = 1
 

@@ -11,7 +11,6 @@ from pandas import DataFrame
 import tkinter as tk
 from tkinter import filedialog
 import carball
-from DeepToot.src.data_generation.NeuralNetworkDataGenerator import NeuralNetworkManager
 from carball.analysis.events.hit_detection.base_hit import BaseHit
 from carball.analysis.utils.proto_manager import ProtobufManager
 from carball.analysis.analysis_manager import AnalysisManager
@@ -122,86 +121,86 @@ class RawReplayData():
             return None
             
 
-def PrintException():
-    exc_type, exc_obj, tb = sys.exc_info()
-    f = tb.tb_frame
-    lineno = tb.tb_lineno
-    filename = f.f_code.co_filename
-    linecache.checkcache(filename)
-    line = linecache.getline(filename, lineno, f.f_globals)
-    print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
+# def PrintException():
+#     exc_type, exc_obj, tb = sys.exc_info()
+#     f = tb.tb_frame
+#     lineno = tb.tb_lineno
+#     filename = f.f_code.co_filename
+#     linecache.checkcache(filename)
+#     line = linecache.getline(filename, lineno, f.f_globals)
+#     print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj))
 
 
-if __name__ == "__main__":
-    try:
-        print('y: load analysis manager and generate nn data test')
-        print('n: initialize analysis manager from .replay file')
-        print('t: load raw nn data')
-        print('c: calculate controls from replay file')
-        print('loadc: load raw game/controls/hit data saved from running c previously')
+# if __name__ == "__main__":
+#     try:
+#         print('y: load analysis manager and generate nn data test')
+#         print('n: initialize analysis manager from .replay file')
+#         print('t: load raw nn data')
+#         print('c: calculate controls from replay file')
+#         print('loadc: load raw game/controls/hit data saved from running c previously')
 
-        raw = input('Choose from above:')
-        if raw == 'y':
-            import NeuralNetworkDataGenerator as nndg
-            from NeuralNetworkDataGenerator import TrainingBatch
-            import NeuralNetworkTrainer
-            h = HitFinder()
-            h.am = HitFinderFactory.load_analysis_manager()
-            h.get_hits()
-            b_in, b_out = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 1)
-            # rawin, rawout = RawDataManager.load_raw_data()
+#         raw = input('Choose from above:')
+#         if raw == 'y':
+#             import NeuralNetworkDataGenerator as nndg
+#             from NeuralNetworkDataGenerator import TrainingBatch
+#             import NeuralNetworkTrainer
+#             h = HitFinder()
+#             h.am = HitFinderFactory.load_analysis_manager()
+#             h.get_hits()
+#             b_in, b_out = nndg.generate_nn_data_from_hits(h.am, h.hits, 10, 1)
+#             # rawin, rawout = RawDataManager.load_raw_data()
 
-        # get input from scenario, save scenario dataframe 
-        if raw == 't': # Test network quickly
-            rawin, rawout = RawDataManager.load_raw_data()
+#         # get input from scenario, save scenario dataframe 
+#         if raw == 't': # Test network quickly
+#             rawin, rawout = RawDataManager.load_raw_data()
 
-        # Calculate controls from replay file
-        if raw == 'c':
-            h = HitFinder()
-            h.load_replay()
-            cc = ControlsCreator()
-            cc.get_controls(h.am.game)
-            print(cc)
-            rrd = RawReplayData()
-            rrd.setData(h.am.data_frame, cc.players, h.hits)
-            rrd.save()
+#         # Calculate controls from replay file
+#         if raw == 'c':
+#             h = HitFinder()
+#             h.load_replay()
+#             cc = ControlsCreator()
+#             cc.get_controls(h.am.game)
+#             print(cc)
+#             rrd = RawReplayData()
+#             rrd.setData(h.am.data_frame, cc.players, h.hits)
+#             rrd.save()
         
-        if raw == 'loadc':
-            rrd = RawReplayData.load()
+#         if raw == 'loadc':
+#             rrd = RawReplayData.load()
 
-        if raw == 'n':
-            import NeuralNetworkDataGenerator as nndg
-            from NeuralNetworkDataGenerator import TrainingBatch
-            import NeuralNetworkTrainer
-            h = HitFinder()
-            h.load_replay()
-            h.get_hits()
-            rawin, rawout = nndg.generate_nn_data_from_hits(h.am, h.hits, NeuralNetManager.window_length, 5)
+#         if raw == 'n':
+#             import NeuralNetworkDataGenerator as nndg
+#             from NeuralNetworkDataGenerator import TrainingBatch
+#             import NeuralNetworkTrainer
+#             h = HitFinder()
+#             h.load_replay()
+#             h.get_hits()
+#             rawin, rawout = nndg.generate_nn_data_from_hits(h.am, h.hits, NeuralNetManager.window_length, 5)
 
-            try:
+#             try:
             
-                HitFinderFactory.save_analysis_manager(h.am)
-                RawDataManager.save_raw_data(rawin.to_numpy(), rawout.to_numpy())
-            except Exception as e:
-                PrintException()
-                # print('Trying trace before pickling')
-                # dill.detect.trace(True)
-                # dill.detect.errors(h.am)
-                # dill.pickles(h.am)
+#                 HitFinderFactory.save_analysis_manager(h.am)
+#                 RawDataManager.save_raw_data(rawin.to_numpy(), rawout.to_numpy())
+#             except Exception as e:
+#                 PrintException()
+#                 # print('Trying trace before pickling')
+#                 # dill.detect.trace(True)
+#                 # dill.detect.errors(h.am)
+#                 # dill.pickles(h.am)
                 
         
-        # print(b_in)
-        # rawin = b_in.to_numpy()
-        # rawout = b_out.to_numpy()
-        # frameWindow = b_in.batch[0] # quicker debugging
-        # gameFrame = frameWindow.frames[0]
-        # playerState = gameFrame.p1
+#         # print(b_in)
+#         # rawin = b_in.to_numpy()
+#         # rawout = b_out.to_numpy()
+#         # frameWindow = b_in.batch[0] # quicker debugging
+#         # gameFrame = frameWindow.frames[0]
+#         # playerState = gameFrame.p1
 
-        #Neural Network testing
-        nn = NeuralNetworkTrainer.LSTM_Model()
-        nn.train(rawin, rawout)
-    except Exception as e:
-        PrintException()
+#         #Neural Network testing
+#         nn = NeuralNetworkTrainer.LSTM_Model()
+#         nn.train(rawin, rawout)
+#     except Exception as e:
+#         PrintException()
 
-    import code
-    code.interact(local=locals())
+#     import code
+#     code.interact(local=locals())

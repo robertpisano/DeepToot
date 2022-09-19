@@ -4,28 +4,15 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-
-class ReplayGenerator():
-    SECONDS_IN_MINUTE = 60
+class HttpCaller():
+    AUTHORIZATION_KEY = "LNyeFi2IH57vXF7xq8TBvlWy9GPkA7fi7X28D4OG"
+    SECONDS_PER_MINUTE = 60
     CALLS_PER_MINUTE = 2
-    AUTHORIZATION = "LNyeFi2IH57vXF7xq8TBvlWy9GPkA7fi7X28D4OG"
-    BASE_URL = "https://ballchasing.com/api"
-    #TODO: is it supposed to be min_rank or min-rank?, can we add the 1v1 only here ?
-    REPLAY_PARAMS = { "season": 12, "min_rank" : "champion-3", "max-rank": "grand-champion", "playlist": "ranked-solo-standard" }
 
     def __init__(self):
-        """
-        This class is used to download the replay files from ballchasing.com
-        Ballchasing has an API rate limit of two calls per minute
-        This class is poorly implemented in that it acts as both an API call manager - (deciding when to make the calls) 
-        While it also makes the calls and downloads the files.
-        It further manages two API's - rocket-league's 
-        The files are saved to ~/rocket-league-replays/season-<season>/replay_id-<replay_id>.replay
-            :param self:
-        """
-        self._set_last_call_time()
-        self.next_url = ""
-
+        super().__init__()
+        self.last_call_time = None
+    
     def _set_last_call_time(self):
         """
         private method used for the api rate limit managememnt
@@ -42,6 +29,8 @@ class ReplayGenerator():
             :param self: 
             @return - [Int] - the amount of seconds that have elapsed since the last api call
         """   
+        if self.last_call_time is None:
+            return self.SECONDS_PER_MINUTE
         current_time = datetime.now()
         return  (current_time - self.last_call_time).total_seconds()
 
@@ -55,7 +44,7 @@ class ReplayGenerator():
             @return [Boolean] - whether or not enough time has elapsed since last call 
         """
         seconds_since_last_call = self._seconds_since_last_call()
-        seconds_between_calls = self.SECONDS_IN_MINUTE / self.CALLS_PER_MINUTE
+        seconds_between_calls = self.SECONDS_PER_MINUTE / self.CALLS_PER_MINUTE
         return seconds_since_last_call >= seconds_between_calls and seconds_since_last_call > 0
 
     def _seconds_to_sleep(self):
@@ -66,7 +55,7 @@ class ReplayGenerator():
             @return [Int] - the amount of second we will need to sleep until we can 
                             make the next call without hitting the rate limit
         """   
-        seconds_between_calls = self.SECONDS_IN_MINUTE / self.CALLS_PER_MINUTE
+        seconds_between_calls = self.SECONDS_PER_MINUTE / self.CALLS_PER_MINUTE
         return (seconds_between_calls - self._seconds_since_last_call())
 
     def _wait_to_make_call(self):
@@ -90,9 +79,9 @@ class ReplayGenerator():
             :param self: 
             @return [Dictionary] - the header names and their values
         """ 
-        return { "Authorization" : self.AUTHORIZATION, "X-Remote-IP": "127.0.0.1" }
+        return { "Authorization" : self.AUTHORIZATION_KEY, "X-Remote-IP": "127.0.0.1" }
     
-    def _make_call(self, http_verb, url):
+    def make_call(self, http_verb, url):
         """
         private method used for accessing API
         uses the requests library in order to make an HTTP call to the provided URL
@@ -106,20 +95,44 @@ class ReplayGenerator():
         self._set_last_call_time()
         return result
 
-    def _write_replay_to_file(self, response, file_path):
+class BallChasingReplayAPI():
+    BASE_URL = "https://ballchasing.com/api"
+
+    #TODO: is it supposed to be min_rank or min-rank?, can we add the 1v1 only here ?
+    REPLAY_PARAMS = { "season": 12, "min_rank" : "champion-3", "max-rank": "grand-champion", "playlist": "ranked-solo-standard" }
+
+    def __init__(self, http_call_handler = HttpCaller()):
+        """
+        This class is used to download the replay files from ballchasing.com
+        Ballchasing has an API rate limit of two calls per minute
+        This class is poorly implemented in that it acts as both an API call manager - (deciding when to make the calls) 
+        While it also makes the calls and downloads the files.
+        It further manages two API's - rocket-league's 
+        The files are saved to <root>/rocket-league-replays/game_id-<replay_id>-season-<season>-.replay
+            :param self:
+        """
+        self.http_call_handler = http_call_handler
+        self.next_url = ""
+
+    def _write_replay_to_file(self, response, directory, file_name):
         """
         private method used to save the downloaded file
             :param self: 
             :param response: [Requests::Response] - the response object representing the results of the API call
             :param file_path: [String] - the absolute path where we want to save the file contents to
-            @return [Void/None]
+            @return [String] [path to where the file was written]
         """   
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        file_path = "{0}\\{1}".format(directory, file_name)
+        print("writing download to file {}".format(file_path))
         with open(file_path, 'wb') as file:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
-                    file.write(chunk)        
+                    file.write(chunk)
+        return file_path       
 
-    def get_replay_list(self):
+    def get_replays_list(self):
         """
         Get's a list of replays from the API - the list is paginated
         so if we have already made the call for the first pagination, 
@@ -136,8 +149,8 @@ class ReplayGenerator():
         # if there is a next_url then we don't want to make the initial call
         # we want to make the call for the next batch of replay ids to downloadS
         if self.next_url: url = self.next_url
-        print("grabbing replays to download... \n\t url: {}".format(url))
-        return self._make_call("GET", url).json()
+        print(f"grabbing replays to download... \n\t url: {url}")
+        return self.http_call_handler.make_call("GET", url).json()
 
     def download_all(self):
         """
@@ -146,14 +159,13 @@ class ReplayGenerator():
             :param self: 
             @return [Void/None]
         """   
-        json_response = self.get_replay_list()
+        json_response = self.get_replays_list()
         replay_list = json_response['list']
         next_url = json_response['next']
         self.next_url = next_url
-        count = 0
-        while self.next_url or count < 3:
+        while self.next_url:
             self.download_replay_group(replay_list)
-            count+=1 
+            self.get_replays_list()
 
 
     def download_replay_group(self, replay_list):
@@ -179,12 +191,11 @@ class ReplayGenerator():
         """
         path = "/replays"
         url = f"https://ballchasing.com/dl/replay/{id}"
-        print("downloading replay id {0}".format(id))
-        response = self._make_call("POST", url)
+        print(f"downloading replay id {id}")
+        response = self.http_call_handler.make_call("POST", url)
         if response.status_code == 200:
-            home = str(Path.home())
-            directory = "{0}\\rocket-league-replays\\season-{1}".format(home, season)
-            file_name = "game-id_{0}.replay".format(id)
-            file_path = "{0}\\{1}".format(directory, file_name)
-            print("download successful, writing to file {}".format(file_path))
-            self._write_replay_to_file(response, file_path)
+            root = os.environ['PROJECT_PATH']
+            directory = f"{root}\\rocket-league-replays\\proto"
+            file_name = f"game-id_{id}_season_{season}.replay"
+            print("download successful")
+            self._write_replay_to_file(response, directory, file_name)

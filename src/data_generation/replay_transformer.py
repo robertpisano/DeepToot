@@ -8,6 +8,7 @@ import gzip
 import pickle
 import pandas as pd
 from pandas import DataFrame
+import tensorflow
 
 from carball.json_parser.game import Game
 from carball.analysis.analysis_manager import AnalysisManager
@@ -34,7 +35,7 @@ import os
 
 class ReplayTransformer():
 
-    def __init__(self, strategy):
+    def __init__(self):
         None
 
 # Go through all the .replay files, and convert to CSV
@@ -46,23 +47,21 @@ class ReplayTransformer():
         root.withdraw()
         # TODO: this and the replay generator should both use the same static directory by default so that we dont need to choose every time
         # we might be able to use relevant paths for this.
-        print("Please select the folder where the replay data is found")
-        self.file_path = filedialog.askdirectory() # open directory dialog
-        self.replays_path = []
-        # TODO: this logic can be its own private method
-        for r in os.listdir(self.file_path):
-            if r.endswith(".replay"):
-                self.replays_path.append(self.file_path + '/' + r)
+        root = os.environ['PROJECT_PATH']
+        input_directory =  f"{root}\\rocket-league-replays\\proto"
         # TODO: Would be better to make this a static directory so that we don't need to choose every time
-        print("Please select the folder to save the converted data to")
-        self.output_path = filedialog.askdirectory() # open output directory dialog
+        ouptput_directory = f"{root}\\rocket-league-replays\\proto"
         self.game = Game()
         # TODO: make private method?
-        for index, replay_file in enumerate(self.replays_path):
-            json_file = carball.decompile_replay(replay_file,
-                                output_path = self.file_path + str(index) + ".json",
-                                overwrite=True)
-            self.game.initialize(loaded_json = json_file) # Initialize game with each file path
+        for filename in os.listdir(input_directory):
+            input_path = f"{input_directory}\\{filename}"
+            filename = filename.split(".")[0]
+            json_output = carball.decompile_replay(input_path)
+            self.game.initialize(loaded_json = json_output) # Initialize game with each file path
+            output_path = f"{input_directory}\\{filename}.csv"
+            dataframe = pd.read_json(json_output)
+            dataframe.to_csv(output_path)
+
             analysis_manager = AnalysisManager(self.game) # Initialize analysis_manager
             analysis_manager.create_analysis() # Analze replay
 
